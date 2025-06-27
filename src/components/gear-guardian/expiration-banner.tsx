@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import type { Equipment } from '@/lib/types';
+import type { Equipment, EquipmentStatus } from '@/lib/types';
 import { X } from 'lucide-react';
 
 interface ExpirationBannerProps {
@@ -18,14 +18,8 @@ export function ExpirationBanner({ equipment, threshold = 80 }: ExpirationBanner
   const expiringSoon = React.useMemo(() => {
     return equipment.filter(item => {
       if (item.archived) return false;
-      const now = Date.now();
-      const startTime = new Date(item.serviceStartDate).getTime();
-      const endTime = new Date(item.expectedEndOfLife).getTime();
-      if (now > endTime) return false; // already expired
-      const totalLifespan = endTime - startTime;
-      const timeElapsed = now - startTime;
-      const percentageUsed = totalLifespan > 0 ? Math.min(100, (timeElapsed / totalLifespan) * 100) : 0;
-      return percentageUsed >= threshold;
+      if (item.status === EquipmentStatus.EXPIRED) return false;
+      return item.percentageUsed >= threshold;
     });
   }, [equipment, threshold]);
 

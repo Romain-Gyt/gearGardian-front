@@ -106,7 +106,10 @@ export function Dashboard() {
     fetchEquipment();
   }, [fetchEquipment]);
 
-  const handleSaveEquipment = async (item: Omit<Equipment, 'id' | 'userId'>, id?: string) => {
+  const handleSaveEquipment = async (
+    item: Omit<Equipment, 'id' | 'userId' | 'status' | 'percentageUsed'>,
+    id?: string,
+  ) => {
     setIsLoadingData(true);
     try {
       await saveEquipment(item, id);

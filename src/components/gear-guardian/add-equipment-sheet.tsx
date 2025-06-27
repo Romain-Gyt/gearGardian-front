@@ -35,7 +35,10 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 
 interface EquipmentSheetProps {
-  onSave: (equipment: Omit<Equipment, 'id' | 'userId'>, id?: string) => void;
+  onSave: (
+    equipment: Omit<Equipment, 'id' | 'userId' | 'status' | 'percentageUsed'>,
+    id?: string,
+  ) => void;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   initialData?: Equipment | null;
@@ -162,7 +165,7 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData, isLo
       }
     }
 
-    const newEquipment: Omit<Equipment, 'id' | 'userId'> = {
+    const newEquipment: Omit<Equipment, 'id' | 'userId' | 'status' | 'percentageUsed'> = {
       name: data.name,
       type: data.type,
       serialNumber: data.serialNumber || '',

@@ -43,7 +43,10 @@ export async function getEquipmentList() {
   return data;
 }
 
-export async function saveEquipment(equipment: Omit<Equipment, 'id' | 'userId'>, id?: string) {
+export async function saveEquipment(
+  equipment: Omit<Equipment, 'id' | 'userId' | 'status' | 'percentageUsed'>,
+  id?: string,
+) {
   if (id) {
     await api.put(`/equipment/${id}`, equipment);
   } else {
