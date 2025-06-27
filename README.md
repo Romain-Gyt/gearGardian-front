@@ -12,14 +12,14 @@ GearGuardian est une application web conçue pour aider les grimpeurs à gérer 
 *   **Suivi de la Durée de Vie :** Calcule automatiquement le pourcentage d'usure basé sur la date de mise en service et la durée de vie recommandée.
 *   **Alertes Visuelles :** Des badges de couleur et un bandeau d'alerte vous informent en un coup d'œil de l'état de votre matériel.
 *   **Analyse par IA :** Obtenez une analyse de sécurité sur l'état de votre équipement en téléversant une simple photo. Le modèle identifie les points d'usure potentiels et fournit des recommandations.
-*   **Authentification Sécurisée :** Créez un compte et gérez votre profil en toute sécurité grâce à Firebase Authentication.
+*   **Authentification Sécurisée :** Inscrivez-vous et connectez-vous via une API Spring sécurisée par JWT.
 *   **Interface Moderne :** Une interface claire et réactive avec un mode sombre.
 
 ## Stack Technique
 
 *   **Framework :** [Next.js](https://nextjs.org/) (App Router)
 *   **UI :** [React](https://react.dev/), [TypeScript](https://www.typescriptlang.org/), [ShadCN UI](https://ui.shadcn.com/), [Tailwind CSS](https://tailwindcss.com/)
-*   **Backend & Base de données :** [Firebase](https://firebase.google.com/) (Authentication, Firestore)
+*   **Backend :** API Spring Boot (JWT, base de données relationnelle)
 *   **Fonctionnalités IA :** [Google Gemini](https://ai.google.dev/) via [Genkit](https://firebase.google.com/docs/genkit)
 
 ---
@@ -32,7 +32,6 @@ Pour faire fonctionner ce projet sur votre machine, suivez ces étapes.
 
 *   [Node.js](https://nodejs.org/) (version 20.x ou supérieure)
 *   Un gestionnaire de paquets comme `npm` ou `yarn`.
-*   Un compte Google pour créer un projet Firebase et obtenir une clé API Google.
 
 ### 1. Cloner le Dépôt
 
@@ -47,39 +46,20 @@ cd <NOM_DU_DOSSIER>
 npm install
 ```
 
-### 3. Configurer Firebase
+### 3. Configurer les Clés d'API
 
-L'application utilise Firebase pour l'authentification des utilisateurs et la base de données Firestore.
-
-1.  Rendez-vous sur la [console Firebase](https://console.firebase.google.com/) et créez un nouveau projet.
-2.  Activez **Authentication** : Allez dans l'onglet `Authentication`, cliquez sur "Commencer", et activez le fournisseur "E-mail/Mot de passe".
-3.  Activez **Firestore Database** : Allez dans l'onglet `Firestore Database`, cliquez sur "Créer une base de données" et démarrez en **mode production**.
-
-### 4. Configurer les Clés d'API
-
-Vous avez besoin de clés pour Firebase et Google AI (Gemini).
+Vous avez besoin d'une URL pour l'API Spring et d'une clé Google AI (Gemini).
 
 1.  **Créez un fichier `.env`** à la racine du projet.
-2.  **Clés Firebase :**
-    *   Dans votre console Firebase, allez dans les **Paramètres du projet** (icône ⚙️).
-    *   Dans l'onglet "Général", descendez jusqu'à "Vos applications".
-    *   Cliquez sur l'icône web `</>` pour enregistrer une nouvelle application web.
-    *   Firebase vous donnera un objet de configuration `firebaseConfig`. Copiez ces clés.
+2.  **Définissez l'URL de l'API :**
+    *   `NEXT_PUBLIC_API_URL=http://localhost:8080`
 3.  **Clé Google AI (Gemini) :**
     *   Allez sur [Google AI Studio](https://aistudio.google.com/app/apikey).
     *   Cliquez sur **`Create API key`** et copiez la clé générée.
-4.  **Remplissez le fichier `.env`** avec vos clés :
+4.  **Exemple de fichier `.env`** :
 
     ```env
-    # Clés Firebase
-    NEXT_PUBLIC_FIREBASE_API_KEY=VOTRE_API_KEY
-    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=VOTRE_AUTH_DOMAIN
-    NEXT_PUBLIC_FIREBASE_PROJECT_ID=VOTRE_PROJECT_ID
-    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=VOTRE_STORAGE_BUCKET
-    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=VOTRE_MESSAGING_SENDER_ID
-    NEXT_PUBLIC_FIREBASE_APP_ID=VOTRE_APP_ID
-
-    # Clé Google AI
+    NEXT_PUBLIC_API_URL=http://localhost:8080
     GOOGLE_API_KEY=VOTRE_CLE_API_GOOGLE_GEMINI
     ```
 

@@ -3,9 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { signup } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -38,20 +36,13 @@ export default function SignupPage() {
     }
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      // Store user's name in Firestore
-      await setDoc(doc(db, "users", userCredential.user.uid), {
-        name,
-        email,
-      });
+      await signup(name, email, password);
       router.push('/dashboard');
     } catch (error: any) {
       console.error(error);
       let description = "Une erreur est survenue. Veuillez réessayer.";
-      if (error.code === 'auth/email-already-in-use') {
+      if (error.response?.status === 409) {
         description = "Cette adresse e-mail est déjà utilisée.";
-      } else if (error.code === 'auth/weak-password') {
-        description = "Le mot de passe doit comporter au moins 6 caractères.";
       }
       toast({
         variant: 'destructive',
