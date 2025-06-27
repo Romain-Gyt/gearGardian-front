@@ -108,6 +108,7 @@ export function Dashboard() {
   const [activeView, setActiveView] = React.useState<View>('equipment');
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
   const [itemToDelete, setItemToDelete] = React.useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = React.useState('');
 
   const [isHealthDialogOpen, setIsHealthDialogOpen] = React.useState(false);
   const [itemToAnalyze, setItemToAnalyze] = React.useState<Equipment | null>(null);
@@ -151,6 +152,18 @@ export function Dashboard() {
     setIsHealthDialogOpen(true);
   };
   
+  const filteredEquipment = equipment.filter(item => {
+    const query = searchQuery.toLowerCase();
+    if (!query) return true;
+    return (
+      item.name.toLowerCase().includes(query) ||
+      item.type.toLowerCase().includes(query) ||
+      (item.serialNumber && item.serialNumber.toLowerCase().includes(query)) ||
+      item.description.toLowerCase().includes(query) ||
+      item.manufacturerData.toLowerCase().includes(query)
+    );
+  });
+
   const NavLink = ({ view, label, icon: Icon }: { view: View, label: string, icon: React.ElementType }) => (
       <a
         href="#"
@@ -235,6 +248,8 @@ export function Dashboard() {
                         type="search"
                         placeholder="Rechercher un équipement..."
                         className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/3"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
                 </form>
@@ -297,7 +312,7 @@ export function Dashboard() {
                     : 'flex flex-col gap-4'
                 }
               >
-                {equipment.map(item => (
+                {filteredEquipment.map(item => (
                   <EquipmentCard 
                     key={item.id} 
                     equipment={item} 
