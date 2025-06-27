@@ -2,9 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { signOut, onAuthStateChanged, User } from 'firebase/auth';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { getProfile, updateProfile, logout } from '@/lib/api';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,7 +22,6 @@ export default function ProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const [user, setUser] = React.useState<User | null>(null);
   const [profile, setProfile] = React.useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
 
@@ -32,37 +29,35 @@ export default function ProfilePage() {
   const [emailNotifications, setEmailNotifications] = React.useState(true);
 
   React.useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists()) {
-          setProfile(userDocSnap.data() as UserProfile);
-        }
-      } else {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) {
+      router.push('/');
+      return;
+    }
+    getProfile()
+      .then((data) => {
+        setProfile(data);
+        setIsLoading(false);
+      })
+      .catch(() => {
         router.push('/');
-      }
-      setIsLoading(false);
-    });
-    return () => unsubscribe();
+      });
   }, [router]);
 
   const handleLogout = async () => {
-    await signOut(auth);
+    logout();
     router.push('/');
   };
   
   const handleProfileSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!user) return;
+    if (!profile) return;
     const formData = new FormData(e.currentTarget);
     const newName = formData.get('name') as string;
     
     try {
-      const userDocRef = doc(db, 'users', user.uid);
-      await updateDoc(userDocRef, { name: newName });
-      setProfile(prev => prev ? { ...prev, name: newName } : { name: newName, email: user.email! });
+      const updated = await updateProfile({ name: newName });
+      setProfile(updated);
       toast({
         title: "Profil mis à jour",
         description: "Vos informations personnelles ont été enregistrées.",
@@ -84,9 +79,8 @@ export default function ProfilePage() {
 
   const handleNotificationSave = (e: React.FormEvent) => {
     e.preventDefault();
-     if (!user) return;
-    // In a real app, you would save these preferences to the user's document in Firestore.
-    // await updateDoc(doc(db, 'users', user.uid), { notificationThreshold, emailNotifications });
+    if (!profile) return;
+    // In a real app, you would save these preferences to the user's document on the server.
     toast({
       title: "Préférences enregistrées",
       description: "Vos paramètres de notification ont été mis à jour.",

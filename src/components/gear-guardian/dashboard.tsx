@@ -2,8 +2,6 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { onAuthStateChanged, type User } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import {
   ShieldCheck,
   PlusCircle,
@@ -52,7 +50,7 @@ import { ModeToggle } from '../mode-toggle';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '../ui/button';
 import { ExpirationBanner } from './expiration-banner';
-import { getEquipmentList, saveEquipment, deleteEquipment } from '@/lib/firestore';
+import { getEquipmentList, saveEquipment, deleteEquipment, logout } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 
@@ -63,7 +61,6 @@ export function Dashboard() {
   const router = useRouter();
   const { toast } = useToast();
   
-  const [user, setUser] = React.useState<User | null>(null);
   const [isLoadingUser, setIsLoadingUser] = React.useState(true);
 
   const [equipment, setEquipment] = React.useState<Equipment[]>([]);
@@ -80,22 +77,18 @@ export function Dashboard() {
   const [itemToAnalyze, setItemToAnalyze] = React.useState<Equipment | null>(null);
 
   React.useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-      } else {
-        router.push('/');
-      }
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) {
+      router.push('/');
+    } else {
       setIsLoadingUser(false);
-    });
-    return () => unsubscribe();
+    }
   }, [router]);
 
   const fetchEquipment = React.useCallback(async () => {
-    if (!user) return;
     try {
       setIsLoadingData(true);
-      const list = await getEquipmentList(user.uid);
+      const list = await getEquipmentList();
       setEquipment(list);
     } catch (error) {
       console.error("Failed to fetch equipment:", error);
@@ -107,17 +100,16 @@ export function Dashboard() {
     } finally {
       setIsLoadingData(false);
     }
-  }, [user, toast]);
+  }, [toast]);
 
   React.useEffect(() => {
     fetchEquipment();
   }, [fetchEquipment]);
 
   const handleSaveEquipment = async (item: Omit<Equipment, 'id' | 'userId'>, id?: string) => {
-    if (!user) return;
     setIsLoadingData(true);
     try {
-      await saveEquipment(item, user.uid, id);
+      await saveEquipment(item, id);
       toast({
         title: 'Équipement sauvegardé',
         description: 'Vos modifications ont été enregistrées avec succès.',
@@ -184,15 +176,15 @@ export function Dashboard() {
   
   const handleLogout = async () => {
     try {
-        await auth.signOut();
-        router.push('/');
+      logout();
+      router.push('/');
     } catch (error) {
-        console.error('Logout failed', error);
-        toast({
-            variant: 'destructive',
-            title: 'Erreur de déconnexion',
-            description: 'Impossible de vous déconnecter. Veuillez réessayer.',
-        });
+      console.error('Logout failed', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erreur de déconnexion',
+        description: 'Impossible de vous déconnecter. Veuillez réessayer.',
+      });
     }
   };
 
