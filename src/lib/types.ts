@@ -27,4 +27,6 @@ export interface Equipment {
 export interface UserProfile {
   name: string;
   email: string;
+  /** Percentage of lifespan used before showing alerts */
+  alertThreshold?: number;
 }

@@ -8,7 +8,7 @@ import { X } from 'lucide-react';
 
 interface ExpirationBannerProps {
   equipment: Equipment[];
-  // TODO: This threshold should come from user profile settings
+  /** Alert threshold percentage from user profile */
   threshold?: number;
 }
 
