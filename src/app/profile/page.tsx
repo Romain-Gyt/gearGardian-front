@@ -1,13 +1,21 @@
+'use client';
+
+import * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import Link from "next/link";
 import { Logo } from "@/components/gear-guardian/logo";
 import { ModeToggle } from "@/components/mode-toggle";
 
 export default function ProfilePage() {
+  const [notificationThreshold, setNotificationThreshold] = React.useState(80);
+  const [emailNotifications, setEmailNotifications] = React.useState(true);
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">
        <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
@@ -37,17 +45,10 @@ export default function ProfilePage() {
             </div>
         </header>
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-10">
-        <div className="mx-auto grid w-full max-w-6xl gap-2">
+        <div className="mx-auto grid w-full max-w-4xl gap-2">
           <h1 className="text-3xl font-semibold font-headline">Mon Profil</h1>
         </div>
-        <div className="mx-auto grid w-full max-w-6xl items-start gap-6 md:grid-cols-[180px_1fr] lg:grid-cols-[250px_1fr]">
-          <nav className="grid gap-4 text-sm text-muted-foreground">
-            <a href="#" className="font-semibold text-primary">
-              Profil
-            </a>
-            <a href="#">Sécurité</a>
-            <a href="#">Notifications</a>
-          </nav>
+        <div className="mx-auto grid w-full max-w-4xl items-start gap-6">
           <div className="grid gap-6">
             <Card>
               <CardHeader>
@@ -87,6 +88,49 @@ export default function ProfilePage() {
                     <Button type="submit" className="w-fit">Mettre à jour le mot de passe</Button>
                  </form>
               </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Notifications</CardTitle>
+                <CardDescription>
+                  Gérez quand et comment vous recevez des alertes sur votre équipement.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-6">
+                <div className="grid gap-2">
+                  <Label htmlFor="threshold">Seuil d'alerte avant fin de vie</Label>
+                  <div className="flex items-center gap-4 pt-2">
+                    <Slider
+                      id="threshold"
+                      value={[notificationThreshold]}
+                      onValueChange={(value) => setNotificationThreshold(value[0])}
+                      max={100}
+                      step={5}
+                    />
+                    <span className="w-16 text-right font-mono text-lg">{notificationThreshold}%</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Recevoir une notification quand la durée de vie utilisée atteint ce pourcentage.
+                  </p>
+                </div>
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="email-notifications" className="text-base">Notifications par e-mail</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Recevoir des rappels d'expiration et des alertes de sécurité par e-mail.
+                    </p>
+                  </div>
+                  <Switch
+                    id="email-notifications"
+                    checked={emailNotifications}
+                    onCheckedChange={setEmailNotifications}
+                    aria-label="Activer les notifications par e-mail"
+                  />
+                </div>
+              </CardContent>
+              <CardFooter>
+                 <Button className="w-fit">Enregistrer les préférences</Button>
+              </CardFooter>
             </Card>
           </div>
         </div>
