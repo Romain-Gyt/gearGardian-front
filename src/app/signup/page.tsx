@@ -58,7 +58,6 @@ export default function SignupPage() {
         title: "Erreur d'inscription",
         description,
       });
-    } finally {
       setIsLoading(false);
     }
   };

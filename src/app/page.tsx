@@ -45,7 +45,6 @@ export default function LoginPage() {
         title: 'Erreur de connexion',
         description: "L'email ou le mot de passe est incorrect.",
       });
-    } finally {
       setIsLoading(false);
     }
   };
