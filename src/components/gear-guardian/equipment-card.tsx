@@ -110,22 +110,30 @@ export function EquipmentCard({ equipment, viewMode, onEdit, onDelete, onAnalyze
           className="rounded-md object-cover aspect-square"
           data-ai-hint={equipment.photoAiHint}
         />
-        <div className="flex-1 grid grid-cols-5 items-center gap-4">
-            <div className="col-span-2">
+        <div className="flex-1 grid grid-cols-6 items-center gap-4">
+            <div className="col-span-3 self-start">
                 <h3 className="font-semibold font-headline">{equipment.name}</h3>
                 <p className="text-xs text-muted-foreground">{equipment.type} {equipment.serialNumber && `- ${equipment.serialNumber}`}</p>
+                 <p className="text-sm text-muted-foreground mt-1 truncate" title={equipment.description}>
+                    {equipment.description}
+                </p>
+                {equipment.manufacturerData && (
+                    <p className="text-xs text-muted-foreground mt-1 truncate" title={equipment.manufacturerData}>
+                        <strong>Note fabricant:</strong> {equipment.manufacturerData}
+                    </p>
+                )}
             </div>
-            <div>
+            <div className="self-center">
                 <Badge variant={status.variant} className="gap-1.5">
                     <status.Icon className="size-3" />
                     {status.text}
                 </Badge>
             </div>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-muted-foreground self-center">
                 <p>Expire le :</p>
                 <p>{expirationDateString}</p>
             </div>
-            <div className="flex justify-end">
+            <div className="flex justify-end self-center">
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">
@@ -189,14 +197,20 @@ export function EquipmentCard({ equipment, viewMode, onEdit, onDelete, onAnalyze
         </div>
       </CardHeader>
       <CardContent className="flex-grow p-6 pt-0">
-         <CardDescription className="flex items-center gap-1.5">
+        <p className="text-sm text-muted-foreground pt-4">{equipment.description}</p>
+        {equipment.manufacturerData && (
+            <p className="text-xs text-muted-foreground mt-2 border-l-2 pl-2 italic">
+                <strong>Note fabricant:</strong> {equipment.manufacturerData}
+            </p>
+        )}
+      </CardContent>
+      <CardFooter className="flex flex-col items-start gap-2 p-6 pt-0 mt-auto w-full">
+        <CardDescription className="flex items-center gap-1.5 text-xs">
             <CalendarDays className="size-3.5" />
             Acheté le : {purchaseDateString}
         </CardDescription>
-      </CardContent>
-      <CardFooter className="flex flex-col items-start gap-4 p-6 pt-0 mt-auto">
         {!archived && (
-            <div>
+            <div className="w-full">
             <span className="text-xs font-medium text-muted-foreground">
                 Durée de vie (Expire le {expirationDateString})
             </span>
