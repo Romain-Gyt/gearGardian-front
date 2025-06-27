@@ -32,49 +32,64 @@ interface EquipmentSheetProps {
   initialData?: Equipment | null;
 }
 
+const equipmentFormSchema = z.object({
+  name: z.string().min(3, { message: 'Le nom doit comporter au moins 3 caractères.' }),
+  purchaseDate: z.date({ required_error: "La date d'achat est requise." }),
+  lifespanYears: z.coerce.number().min(1, "La durée de vie doit être d'au moins 1 an.").max(50, 'La durée de vie ne peut pas dépasser 50 ans.'),
+  description: z.string().min(10, { message: 'La description doit comporter au moins 10 caractères.' }),
+  manufacturerData: z.string().optional(),
+  photo: z.any().optional(),
+});
+
+type EquipmentFormValues = z.infer<typeof equipmentFormSchema>;
+
 export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData }: EquipmentSheetProps) {
   const [isSaving, setIsSaving] = React.useState(false);
   const isEditMode = !!initialData;
 
-  const equipmentSchema = React.useMemo(() => z.object({
-    name: z.string().min(3, { message: 'Le nom doit comporter au moins 3 caractères.' }),
-    purchaseDate: z.date({ required_error: "La date d'achat est requise." }),
-    lifespanYears: z.coerce.number().min(1, "La durée de vie doit être d'au moins 1 an.").max(50, 'La durée de vie ne peut pas dépasser 50 ans.'),
-    description: z.string().min(10, { message: 'La description doit comporter au moins 10 caractères.' }),
-    manufacturerData: z.string().optional(),
-    photo: z.any().refine(
-      (files) => {
-        if (isEditMode) return true; // Photo is optional in edit mode
-        return files?.length === 1; // Photo is required in create mode
-      },
-      { message: 'La photo est requise.' }
-    ),
-  }), [isEditMode]);
-
-  type EquipmentFormValues = z.infer<typeof equipmentSchema>;
+  const validationSchema = React.useMemo(() => {
+    if (isEditMode) {
+      return equipmentFormSchema;
+    }
+    return equipmentFormSchema.extend({
+      photo: z.any().refine((files) => files?.length === 1, {
+        message: 'La photo est requise.',
+      }),
+    });
+  }, [isEditMode]);
 
   const form = useForm<EquipmentFormValues>({
-    resolver: zodResolver(equipmentSchema),
+    resolver: zodResolver(validationSchema),
     defaultValues: {
       name: '',
-      purchaseDate: undefined,
+      purchaseDate: new Date(),
       lifespanYears: 10,
       description: '',
       manufacturerData: '',
       photo: undefined,
-    },
+    }
   });
 
   React.useEffect(() => {
     if (isOpen) {
       if (initialData) {
         form.reset({
-          ...initialData,
+          name: initialData.name,
           purchaseDate: new Date(initialData.purchaseDate),
-          photo: undefined, // Reset photo input
+          lifespanYears: initialData.lifespanYears,
+          description: initialData.description,
+          manufacturerData: initialData.manufacturerData,
+          photo: undefined,
         });
       } else {
-        form.reset(); // Reset to defaultValues for new item
+        form.reset({
+          name: '',
+          purchaseDate: new Date(),
+          lifespanYears: 10,
+          description: '',
+          manufacturerData: '',
+          photo: undefined,
+        });
       }
     }
   }, [isOpen, initialData, form]);
