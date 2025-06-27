@@ -8,6 +8,13 @@ export enum EquipmentType {
   OTHER = 'Autre',
 }
 
+export enum EquipmentStatus {
+  GOOD = 'GOOD',
+  EXPIRING_SOON = 'EXPIRING_SOON',
+  EXPIRED = 'EXPIRED',
+  ARCHIVED = 'ARCHIVED',
+}
+
 export interface Equipment {
   id: string;
   userId: string;
@@ -22,6 +29,8 @@ export interface Equipment {
   description: string;
   manufacturerData: string;
   archived: boolean;
+  percentageUsed: number;
+  status: EquipmentStatus;
 }
 
 export interface UserProfile {

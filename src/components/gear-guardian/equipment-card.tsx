@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import type { Equipment } from '@/lib/types';
+import type { Equipment, EquipmentStatus } from '@/lib/types';
 import { CalendarDays, ShieldCheck, ShieldAlert, ShieldQuestion, MoreHorizontal, Pencil, Trash2, Archive, BrainCircuit } from 'lucide-react';
 import {
     Tooltip,
@@ -25,47 +25,39 @@ interface EquipmentCardProps {
 }
 
 export function EquipmentCard({ equipment, viewMode, onEdit, onDelete, onAnalyze }: EquipmentCardProps) {
-  const { serviceStartDate, expectedEndOfLife, archived, purchaseDate } = equipment;
-  
-  const now = Date.now();
-  const startTime = new Date(serviceStartDate).getTime();
-  const endTime = new Date(expectedEndOfLife).getTime();
-  const isExpired = now > endTime;
-  const totalLifespan = endTime - startTime;
-  const timeElapsed = now - startTime;
-  const percentageUsed = totalLifespan > 0 ? Math.min(100, (timeElapsed / totalLifespan) * 100) : 0;
+  const { expectedEndOfLife, archived, purchaseDate, percentageUsed, status: equipmentStatus } = equipment;
 
   const getStatus = () => {
-    if (archived) {
-      return {
-        text: 'Archivé',
-        variant: 'outline',
-        Icon: Archive,
-        progressClass: 'bg-gray-400',
-      } as const;
+    switch (equipmentStatus) {
+      case EquipmentStatus.ARCHIVED:
+        return {
+          text: 'Archivé',
+          variant: 'outline',
+          Icon: Archive,
+          progressClass: 'bg-gray-400',
+        } as const;
+      case EquipmentStatus.EXPIRED:
+        return {
+          text: 'Expiré',
+          variant: 'destructive',
+          Icon: ShieldAlert,
+          progressClass: 'bg-destructive',
+        } as const;
+      case EquipmentStatus.EXPIRING_SOON:
+        return {
+          text: 'Expire bientôt',
+          variant: 'secondary',
+          Icon: ShieldQuestion,
+          progressClass: 'bg-yellow-500',
+        } as const;
+      default:
+        return {
+          text: 'Bon état',
+          variant: 'default',
+          Icon: ShieldCheck,
+          progressClass: 'bg-primary',
+        } as const;
     }
-    if (isExpired) {
-      return {
-        text: 'Expiré',
-        variant: 'destructive',
-        Icon: ShieldAlert,
-        progressClass: 'bg-destructive',
-      } as const;
-    }
-    if (percentageUsed >= 80) {
-      return {
-        text: 'Expire bientôt',
-        variant: 'secondary',
-        Icon: ShieldQuestion,
-        progressClass: 'bg-yellow-500',
-      } as const;
-    }
-    return {
-      text: 'Bon état',
-      variant: 'default',
-      Icon: ShieldCheck,
-      progressClass: 'bg-primary',
-    } as const;
   };
 
   const status = getStatus();
