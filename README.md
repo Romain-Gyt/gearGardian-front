@@ -2,7 +2,8 @@
 
 GearGuardian est une application web conçue pour aider les grimpeurs à gérer leur équipement d'escalade, à suivre son usure et à garantir leur sécurité grâce à des analyses intelligentes. Ne perdez plus jamais la trace de la durée de vie de votre matériel !
 
-![Aperçu de GearGuardian](https://placehold.co/800x400.png)
+![Aperçu de GearGuardian]![f940a070-dca3-449f-94c6-ba68ba5d608c](https://github.com/user-attachments/assets/90ca7e65-c146-422b-8fc3-f8bc80a7cfdf)
+)
 *L'image ci-dessus est un placeholder. Pensez à la remplacer par une vraie capture d'écran de l'application.*
 
 ## Fonctionnalités
