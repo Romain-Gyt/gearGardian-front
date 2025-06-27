@@ -11,6 +11,7 @@ import {
   LayoutGrid,
   List,
   BookOpen,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -45,63 +46,21 @@ import { Tutorials } from './tutorials';
 import { Logo } from './logo';
 import { GearHealthDialog } from './gear-health-dialog';
 import type { Equipment } from '@/lib/types';
-import { EquipmentType } from '@/lib/types';
 import { ModeToggle } from '../mode-toggle';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '../ui/button';
 import { ExpirationBanner } from './expiration-banner';
+import { getEquipmentList, saveEquipment, deleteEquipment } from '@/lib/actions';
+import { useToast } from '@/hooks/use-toast';
 
-
-const initialEquipment: Equipment[] = [
-  {
-    id: 'rope-1',
-    name: 'Corde d\'escalade dynamique',
-    type: EquipmentType.ROPE,
-    serialNumber: 'BEAL-2022-XYZ',
-    photoUrl: 'https://placehold.co/600x400.png',
-    photoAiHint: 'climbing rope',
-    purchaseDate: new Date('2022-03-15'),
-    serviceStartDate: new Date('2022-04-01'),
-    expectedEndOfLife: new Date('2027-03-15'),
-    description: 'Corde dynamique de 60m pour l\'escalade sportive. Peu utilisée, le week-end.',
-    manufacturerData: 'Beal Joker 9.1mm Unicore. Mise au rebut recommandée après 5 ans d\'usage modéré, ou 10 ans au total.',
-    archived: false,
-  },
-  {
-    id: 'harness-1',
-    name: 'Baudrier Arc\'teryx AR-395a',
-    type: EquipmentType.HARNESS,
-    serialNumber: 'AR-395a-2021-ABC',
-    photoUrl: 'https://placehold.co/600x400.png',
-    photoAiHint: 'climbing harness',
-    purchaseDate: new Date('2021-08-01'),
-    serviceStartDate: new Date('2021-08-01'),
-    expectedEndOfLife: new Date('2028-08-01'),
-    description: 'Baudrier principal pour toutes les disciplines. Montre une usure mineure sur les pontets.',
-    manufacturerData: 'La durée de vie standard d\'un baudrier Arc\'teryx est de 7 ans à partir de la date de fabrication dans des conditions optimales.',
-    archived: false,
-  },
-  {
-    id: 'carabiner-set-1',
-    name: 'Dégaines Black Diamond',
-    type: EquipmentType.QUICKDRAW,
-    serialNumber: 'BD-2023-123',
-    photoUrl: 'https://placehold.co/600x400.png',
-    photoAiHint: 'climbing quickdraws',
-    purchaseDate: new Date('2023-01-20'),
-    serviceStartDate: new Date('2023-02-01'),
-    expectedEndOfLife: new Date('2033-01-20'),
-    description: 'Jeu de 12 dégaines. Aucune chute majeure.',
-    manufacturerData: 'Black Diamond recommande de mettre au rebut les mousquetons après 10 ans, ou immédiatement s\'ils ont subi une chute importante ou présentent des gorges profondes.',
-    archived: true,
-  },
-];
 
 type View = 'equipment' | 'tutorials';
 
 export function Dashboard() {
   const router = useRouter();
-  const [equipment, setEquipment] = React.useState<Equipment[]>(initialEquipment);
+  const { toast } = useToast();
+  const [equipment, setEquipment] = React.useState<Equipment[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [editingEquipment, setEditingEquipment] = React.useState<Equipment | null>(null);
   const [viewMode, setViewMode] = React.useState<'grid' | 'list'>('grid');
@@ -113,15 +72,45 @@ export function Dashboard() {
   const [isHealthDialogOpen, setIsHealthDialogOpen] = React.useState(false);
   const [itemToAnalyze, setItemToAnalyze] = React.useState<Equipment | null>(null);
 
-  const handleSaveEquipment = (item: Omit<Equipment, 'id'>, id?: string) => {
-    if (id) {
-      setEquipment(prev => prev.map(e => e.id === id ? { ...item, id } : e));
-    } else {
-      const newEquipment = { ...item, id: `equip-${Date.now()}` };
-      setEquipment(prev => [newEquipment, ...prev]);
+  const fetchEquipment = React.useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const list = await getEquipmentList();
+      setEquipment(list);
+    } catch (error) {
+      console.error("Failed to fetch equipment:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Erreur de chargement',
+        description: "Impossible de récupérer les équipements depuis la base de données.",
+      });
+    } finally {
+      setIsLoading(false);
     }
-    setIsSheetOpen(false);
-    setEditingEquipment(null);
+  }, [toast]);
+
+  React.useEffect(() => {
+    fetchEquipment();
+  }, [fetchEquipment]);
+
+  const handleSaveEquipment = async (item: Omit<Equipment, 'id'>, id?: string) => {
+    try {
+      await saveEquipment(item, id);
+      toast({
+        title: 'Équipement sauvegardé',
+        description: 'Vos modifications ont été enregistrées avec succès.',
+      });
+      fetchEquipment();
+      setIsSheetOpen(false);
+      setEditingEquipment(null);
+    } catch (error) {
+      console.error("Failed to save equipment:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Erreur de sauvegarde',
+        description: "L'enregistrement de l'équipement a échoué.",
+      });
+    }
   };
   
   const handleAddItem = () => {
@@ -139,11 +128,26 @@ export function Dashboard() {
     setShowDeleteConfirm(true);
   };
   
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (itemToDelete) {
-      setEquipment(prev => prev.filter(e => e.id !== itemToDelete));
-      setShowDeleteConfirm(false);
-      setItemToDelete(null);
+      try {
+        await deleteEquipment(itemToDelete);
+        toast({
+          title: 'Équipement supprimé',
+          description: "L'équipement a été supprimé de vos archives.",
+        });
+        fetchEquipment();
+      } catch (error) {
+        console.error("Failed to delete equipment:", error);
+        toast({
+          variant: 'destructive',
+          title: 'Erreur de suppression',
+          description: "La suppression de l'équipement a échoué.",
+        });
+      } finally {
+        setShowDeleteConfirm(false);
+        setItemToDelete(null);
+      }
     }
   };
 
@@ -305,24 +309,41 @@ export function Dashboard() {
                 </TooltipProvider>
               </div>
 
-              <div
-                className={
-                  viewMode === 'grid'
-                    ? 'grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
-                    : 'flex flex-col gap-4'
-                }
-              >
-                {filteredEquipment.map(item => (
-                  <EquipmentCard 
-                    key={item.id} 
-                    equipment={item} 
-                    viewMode={viewMode}
-                    onEdit={handleEditItem}
-                    onDelete={handleDeleteRequest}
-                    onAnalyze={handleAnalyzeRequest}
-                  />
-                ))}
-              </div>
+              {isLoading ? (
+                <div className="flex flex-1 items-center justify-center py-10">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : filteredEquipment.length > 0 ? (
+                <div
+                  className={
+                    viewMode === 'grid'
+                      ? 'grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                      : 'flex flex-col gap-4'
+                  }
+                >
+                  {filteredEquipment.map(item => (
+                    <EquipmentCard 
+                      key={item.id} 
+                      equipment={item} 
+                      viewMode={viewMode}
+                      onEdit={handleEditItem}
+                      onDelete={handleDeleteRequest}
+                      onAnalyze={handleAnalyzeRequest}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm py-10 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                        <h3 className="text-2xl font-bold tracking-tight">Vous n'avez aucun équipement</h3>
+                        <p className="text-sm text-muted-foreground">Commencez par en ajouter un pour le suivre.</p>
+                        <Button className="mt-4" onClick={handleAddItem}>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Ajouter un équipement
+                        </Button>
+                    </div>
+                </div>
+              )}
             </>
           ) : (
             <Tutorials />
@@ -352,10 +373,10 @@ export function Dashboard() {
       <GearHealthDialog
         isOpen={isHealthDialogOpen}
         onOpenChange={(open) => {
-            setIsHealthDialogOpen(open);
             if (!open) {
                 setItemToAnalyze(null);
             }
+            setIsHealthDialogOpen(open);
         }}
         equipment={itemToAnalyze}
       />
