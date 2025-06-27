@@ -39,6 +39,7 @@ import { EquipmentCard } from './equipment-card';
 import { AddEquipmentSheet } from './add-equipment-sheet';
 import { Logo } from './logo';
 import type { Equipment } from '@/lib/types';
+import { ModeToggle } from '../mode-toggle';
 
 const initialEquipment: Equipment[] = [
   {
@@ -91,7 +92,7 @@ export function Dashboard() {
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <a href="/" className="flex items-center gap-2 font-semibold">
               <Logo className="size-6" />
-              <span className="font-headline text-lg">Gardien d'Équipement</span>
+              <span className="font-headline text-lg">GearGuardien</span>
             </a>
           </div>
           <div className="flex-1">
@@ -145,7 +146,7 @@ export function Dashboard() {
                   className="flex items-center gap-2 text-lg font-semibold"
                 >
                   <Logo className="h-6 w-6" />
-                  <span className="font-headline">Gardien d'Équipement</span>
+                  <span className="font-headline">GearGuardien</span>
                 </a>
                 <a
                   href="#"
@@ -197,6 +198,7 @@ export function Dashboard() {
                 Ajouter un équipement
               </Button>
             </AddEquipmentSheet>
+            <ModeToggle />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">

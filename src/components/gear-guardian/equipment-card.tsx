@@ -13,7 +13,6 @@ import {
     TooltipProvider,
     TooltipTrigger,
   } from "@/components/ui/tooltip"
-import { fr } from 'date-fns/locale';
 
 interface EquipmentCardProps {
   equipment: Equipment;
@@ -136,15 +135,3 @@ export function EquipmentCard({ equipment, viewMode }: EquipmentCardProps) {
     </Card>
   );
 }
-
-// Add this to ui/progress.tsx if you want custom indicator colors
-// In Progress component:
-// <ProgressPrimitive.Indicator
-//   className={cn("h-full w-full flex-1 bg-primary transition-all", indicatorClassName)}
-// ...
-// And in ProgressProps:
-// indicatorClassName?: string
-Progress.defaultProps = {
-    ...Progress.defaultProps,
-    indicatorClassName: '',
-};
