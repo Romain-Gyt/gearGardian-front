@@ -165,7 +165,7 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData, isLo
     const newEquipment: Omit<Equipment, 'id' | 'userId'> = {
       name: data.name,
       type: data.type,
-      serialNumber: data.serialNumber,
+      serialNumber: data.serialNumber || '',
       purchaseDate: data.purchaseDate,
       serviceStartDate: data.serviceStartDate,
       expectedEndOfLife: data.expectedEndOfLife,
