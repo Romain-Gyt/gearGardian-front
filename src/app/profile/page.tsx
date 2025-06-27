@@ -1,6 +1,10 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
+import { signOut, onAuthStateChanged, User } from 'firebase/auth';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,36 +16,109 @@ import Link from "next/link";
 import { Logo } from "@/components/gear-guardian/logo";
 import { ModeToggle } from "@/components/mode-toggle";
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
+import type { UserProfile } from '@/lib/types';
+
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { toast } = useToast();
+
+  const [user, setUser] = React.useState<User | null>(null);
+  const [profile, setProfile] = React.useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+
   const [notificationThreshold, setNotificationThreshold] = React.useState(80);
   const [emailNotifications, setEmailNotifications] = React.useState(true);
 
-  const handleProfileSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast({
-      title: "Profil mis à jour",
-      description: "Vos informations personnelles ont été enregistrées.",
+  React.useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+          setProfile(userDocSnap.data() as UserProfile);
+        }
+      } else {
+        router.push('/');
+      }
+      setIsLoading(false);
     });
+    return () => unsubscribe();
+  }, [router]);
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push('/');
+  };
+  
+  const handleProfileSave = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!user) return;
+    const formData = new FormData(e.currentTarget);
+    const newName = formData.get('name') as string;
+    
+    try {
+      const userDocRef = doc(db, 'users', user.uid);
+      await updateDoc(userDocRef, { name: newName });
+      setProfile(prev => prev ? { ...prev, name: newName } : { name: newName, email: user.email! });
+      toast({
+        title: "Profil mis à jour",
+        description: "Vos informations personnelles ont été enregistrées.",
+      });
+    } catch (error) {
+      toast({ variant: 'destructive', title: "Erreur", description: "La mise à jour a échoué."});
+    }
   };
 
   const handlePasswordSave = (e: React.FormEvent) => {
     e.preventDefault();
-    // Dans une vraie application, vous videriez les champs ici.
+    // In a real app, you'd use Firebase's updatePassword function.
+    // This requires re-authentication, so it's a more complex flow.
     toast({
-      title: "Mot de passe mis à jour",
-      description: "Votre mot de passe a été changé avec succès.",
+      title: "Fonctionnalité à venir",
+      description: "La mise à jour du mot de passe sera bientôt disponible.",
     });
   };
 
   const handleNotificationSave = (e: React.FormEvent) => {
     e.preventDefault();
+     if (!user) return;
+    // In a real app, you would save these preferences to the user's document in Firestore.
+    // await updateDoc(doc(db, 'users', user.uid), { notificationThreshold, emailNotifications });
     toast({
       title: "Préférences enregistrées",
       description: "Vos paramètres de notification ont été mis à jour.",
     });
   };
+
+  if (isLoading || !profile) {
+    return (
+        <div className="flex min-h-screen w-full flex-col bg-background">
+             <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
+                <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
+                    <Link
+                        href="/dashboard"
+                        className="flex items-center gap-2 text-lg font-semibold md:text-base"
+                    >
+                        <Logo className="h-6 w-6" />
+                        <span className="sr-only">GearGuardian</span>
+                    </Link>
+                    <Skeleton className="h-4 w-24" />
+                </nav>
+            </header>
+            <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-10">
+                <div className="mx-auto grid w-full max-w-4xl gap-6">
+                    <Skeleton className="h-8 w-48" />
+                    <Skeleton className="h-64 w-full" />
+                    <Skeleton className="h-48 w-full" />
+                    <Skeleton className="h-56 w-full" />
+                </div>
+            </main>
+        </div>
+    )
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">
@@ -66,9 +143,7 @@ export default function ProfilePage() {
                     {/* Placeholder for potential search or actions */}
                 </div>
                 <ModeToggle />
-                <Link href="/dashboard">
-                    <Button variant="outline">Retour au tableau de bord</Button>
-                </Link>
+                 <Button variant="outline" onClick={handleLogout}>Déconnexion</Button>
             </div>
         </header>
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-10">
@@ -88,14 +163,13 @@ export default function ProfilePage() {
                 <form className="grid gap-4" onSubmit={handleProfileSave}>
                   <div className="flex items-center gap-4">
                         <Avatar className="h-20 w-20">
-                            <AvatarImage src="https://placehold.co/100x100.png" alt="Avatar" data-ai-hint="person portrait"/>
-                            <AvatarFallback>JD</AvatarFallback>
+                            <AvatarImage src={`https://api.dicebear.com/8.x/initials/svg?seed=${profile.name}`} alt="Avatar" />
+                            <AvatarFallback>{profile.name.substring(0,2)}</AvatarFallback>
                         </Avatar>
-                        <Button variant="outline">Changer la photo</Button>
+                        <Button variant="outline" type="button">Changer la photo</Button>
                     </div>
-                  <Input placeholder="Prénom" defaultValue="John" />
-                  <Input placeholder="Nom" defaultValue="Doe" />
-                  <Input type="email" placeholder="Email" defaultValue="john.doe@example.com" />
+                  <Input name="name" placeholder="Nom complet" defaultValue={profile.name} />
+                  <Input type="email" placeholder="Email" defaultValue={profile.email} disabled />
                   <Button type="submit" className="w-fit">Enregistrer</Button>
                 </form>
               </CardContent>

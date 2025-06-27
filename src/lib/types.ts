@@ -10,6 +10,7 @@ export enum EquipmentType {
 
 export interface Equipment {
   id: string;
+  userId: string;
   name: string;
   type: EquipmentType;
   serialNumber?: string;
@@ -21,4 +22,9 @@ export interface Equipment {
   description: string;
   manufacturerData: string;
   archived: boolean;
+}
+
+export interface UserProfile {
+  name: string;
+  email: string;
 }

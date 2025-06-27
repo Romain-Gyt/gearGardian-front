@@ -1,49 +1,98 @@
+'use client';
+
+import * as React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/gear-guardian/logo';
-import { redirect } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 export default function SignupPage() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = React.useState(false);
 
-  const handleSignup = async (formData: FormData) => {
-    'use server';
-    // La logique de création d'utilisateur réelle se trouverait ici.
-    // Pour l'instant, nous redirigeons simplement vers le tableau de bord.
-    redirect('/dashboard');
-  }
+  const handleSignup = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsLoading(true);
+    const formData = new FormData(event.currentTarget);
+    const name = formData.get('name') as string;
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    if (!name || !email || !password) {
+      toast({
+        variant: 'destructive',
+        title: 'Champs manquants',
+        description: 'Veuillez remplir tous les champs.',
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      // Store user's name in Firestore
+      await setDoc(doc(db, "users", userCredential.user.uid), {
+        name,
+        email,
+      });
+      router.push('/dashboard');
+    } catch (error: any) {
+      console.error(error);
+      let description = "Une erreur est survenue. Veuillez réessayer.";
+      if (error.code === 'auth/email-already-in-use') {
+        description = "Cette adresse e-mail est déjà utilisée.";
+      } else if (error.code === 'auth/weak-password') {
+        description = "Le mot de passe doit comporter au moins 6 caractères.";
+      }
+      toast({
+        variant: 'destructive',
+        title: "Erreur d'inscription",
+        description,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-muted/40">
       <Card className="w-full max-w-sm mx-4">
         <CardHeader className="text-center">
-            <div className="flex justify-center items-center gap-2 mb-4">
-                <Logo className="size-8" />
-                <h1 className="text-2xl font-headline">GearGuardian</h1>
-            </div>
+          <div className="flex justify-center items-center gap-2 mb-4">
+            <Logo className="size-8" />
+            <h1 className="text-2xl font-headline">GearGuardian</h1>
+          </div>
           <CardTitle className="text-2xl">Inscription</CardTitle>
           <CardDescription>Créez un compte pour commencer à gérer votre équipement.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={handleSignup}>
+          <form onSubmit={handleSignup}>
             <div className="grid gap-4">
-                <div className="grid gap-2">
+              <div className="grid gap-2">
                 <Label htmlFor="name">Nom</Label>
                 <Input id="name" name="name" placeholder="Prénom Nom" required />
-                </div>
-                <div className="grid gap-2">
+              </div>
+              <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" name="email" type="email" placeholder="nom@exemple.com" required />
-                </div>
-                <div className="grid gap-2">
+              </div>
+              <div className="grid gap-2">
                 <Label htmlFor="password">Mot de passe</Label>
                 <Input id="password" name="password" type="password" required />
-                </div>
-                <Button type="submit" className="w-full">
+              </div>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Créer un compte
-                </Button>
+              </Button>
             </div>
           </form>
           <div className="mt-4 text-center text-sm">

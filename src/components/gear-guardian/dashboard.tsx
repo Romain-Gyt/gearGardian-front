@@ -2,10 +2,12 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
+import { onAuthStateChanged, type User } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import {
   ShieldCheck,
   PlusCircle,
-  User,
+  LogOut,
   PanelLeft,
   Search,
   LayoutGrid,
@@ -50,8 +52,9 @@ import { ModeToggle } from '../mode-toggle';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '../ui/button';
 import { ExpirationBanner } from './expiration-banner';
-import { getEquipmentList, saveEquipment, deleteEquipment } from '@/lib/actions';
+import { getEquipmentList, saveEquipment, deleteEquipment } from '@/lib/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '../ui/skeleton';
 
 
 type View = 'equipment' | 'tutorials';
@@ -59,8 +62,12 @@ type View = 'equipment' | 'tutorials';
 export function Dashboard() {
   const router = useRouter();
   const { toast } = useToast();
+  
+  const [user, setUser] = React.useState<User | null>(null);
+  const [isLoadingUser, setIsLoadingUser] = React.useState(true);
+
   const [equipment, setEquipment] = React.useState<Equipment[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [isLoadingData, setIsLoadingData] = React.useState(true);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [editingEquipment, setEditingEquipment] = React.useState<Equipment | null>(null);
   const [viewMode, setViewMode] = React.useState<'grid' | 'list'>('grid');
@@ -72,10 +79,23 @@ export function Dashboard() {
   const [isHealthDialogOpen, setIsHealthDialogOpen] = React.useState(false);
   const [itemToAnalyze, setItemToAnalyze] = React.useState<Equipment | null>(null);
 
+  React.useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        router.push('/');
+      }
+      setIsLoadingUser(false);
+    });
+    return () => unsubscribe();
+  }, [router]);
+
   const fetchEquipment = React.useCallback(async () => {
+    if (!user) return;
     try {
-      setIsLoading(true);
-      const list = await getEquipmentList();
+      setIsLoadingData(true);
+      const list = await getEquipmentList(user.uid);
       setEquipment(list);
     } catch (error) {
       console.error("Failed to fetch equipment:", error);
@@ -85,22 +105,24 @@ export function Dashboard() {
         description: "Impossible de récupérer les équipements depuis la base de données.",
       });
     } finally {
-      setIsLoading(false);
+      setIsLoadingData(false);
     }
-  }, [toast]);
+  }, [user, toast]);
 
   React.useEffect(() => {
     fetchEquipment();
   }, [fetchEquipment]);
 
-  const handleSaveEquipment = async (item: Omit<Equipment, 'id'>, id?: string) => {
+  const handleSaveEquipment = async (item: Omit<Equipment, 'id' | 'userId'>, id?: string) => {
+    if (!user) return;
+    setIsLoadingData(true);
     try {
-      await saveEquipment(item, id);
+      await saveEquipment(item, user.uid, id);
       toast({
         title: 'Équipement sauvegardé',
         description: 'Vos modifications ont été enregistrées avec succès.',
       });
-      fetchEquipment();
+      fetchEquipment(); // Refetch data
       setIsSheetOpen(false);
       setEditingEquipment(null);
     } catch (error) {
@@ -110,6 +132,8 @@ export function Dashboard() {
         title: 'Erreur de sauvegarde',
         description: "L'enregistrement de l'équipement a échoué.",
       });
+    } finally {
+      setIsLoadingData(false);
     }
   };
   
@@ -130,13 +154,14 @@ export function Dashboard() {
   
   const confirmDelete = async () => {
     if (itemToDelete) {
+      setIsLoadingData(true);
       try {
         await deleteEquipment(itemToDelete);
         toast({
           title: 'Équipement supprimé',
           description: "L'équipement a été supprimé de vos archives.",
         });
-        fetchEquipment();
+        fetchEquipment(); // Refetch data
       } catch (error) {
         console.error("Failed to delete equipment:", error);
         toast({
@@ -145,6 +170,7 @@ export function Dashboard() {
           description: "La suppression de l'équipement a échoué.",
         });
       } finally {
+        setIsLoadingData(false);
         setShowDeleteConfirm(false);
         setItemToDelete(null);
       }
@@ -156,6 +182,20 @@ export function Dashboard() {
     setIsHealthDialogOpen(true);
   };
   
+  const handleLogout = async () => {
+    try {
+        await auth.signOut();
+        router.push('/');
+    } catch (error) {
+        console.error('Logout failed', error);
+        toast({
+            variant: 'destructive',
+            title: 'Erreur de déconnexion',
+            description: 'Impossible de vous déconnecter. Veuillez réessayer.',
+        });
+    }
+  };
+
   const filteredEquipment = equipment.filter(item => {
     const query = searchQuery.toLowerCase();
     if (!query) return true;
@@ -201,6 +241,14 @@ export function Dashboard() {
         {label}
       </a>
   );
+  
+  if (isLoadingUser) {
+    return (
+        <div className="flex items-center justify-center min-h-screen">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+    );
+  }
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
@@ -267,7 +315,7 @@ export function Dashboard() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
-                <User className="h-5 w-5" />
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 <span className="sr-only">Basculer le menu utilisateur</span>
               </Button>
             </DropdownMenuTrigger>
@@ -275,9 +323,12 @@ export function Dashboard() {
               <DropdownMenuLabel>Mon Compte</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => router.push('/profile')}>Profil</DropdownMenuItem>
-              <DropdownMenuItem>Support</DropdownMenuItem>
+              <DropdownMenuItem disabled>Support</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push('/')}>Déconnexion</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Déconnexion
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
@@ -309,9 +360,25 @@ export function Dashboard() {
                 </TooltipProvider>
               </div>
 
-              {isLoading ? (
-                <div className="flex flex-1 items-center justify-center py-10">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              {isLoadingData ? (
+                 <div
+                  className={
+                    viewMode === 'grid'
+                      ? 'grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                      : 'flex flex-col gap-4'
+                  }
+                >
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    viewMode === 'grid' ? (
+                      <div key={i} className="flex flex-col gap-2">
+                        <Skeleton className="h-40 w-full rounded-lg" />
+                        <Skeleton className="h-5 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                      </div>
+                    ) : (
+                      <Skeleton key={i} className="h-24 w-full rounded-lg" />
+                    )
+                  ))}
                 </div>
               ) : filteredEquipment.length > 0 ? (
                 <div
@@ -355,6 +422,7 @@ export function Dashboard() {
         isOpen={isSheetOpen} 
         onOpenChange={setIsSheetOpen}
         initialData={editingEquipment}
+        isLoading={isLoadingData}
       />
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>

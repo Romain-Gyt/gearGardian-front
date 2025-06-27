@@ -35,10 +35,11 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 
 interface EquipmentSheetProps {
-  onSave: (equipment: Omit<Equipment, 'id'>, id?: string) => void;
+  onSave: (equipment: Omit<Equipment, 'id' | 'userId'>, id?: string) => void;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   initialData?: Equipment | null;
+  isLoading: boolean;
 }
 
 const equipmentFormSchema = z.object({
@@ -57,8 +58,7 @@ const equipmentFormSchema = z.object({
 
 type EquipmentFormValues = z.infer<typeof equipmentFormSchema>;
 
-export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData }: EquipmentSheetProps) {
-  const [isSaving, setIsSaving] = React.useState(false);
+export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData, isLoading }: EquipmentSheetProps) {
   const isEditMode = !!initialData;
 
   const validationSchema = React.useMemo(() => {
@@ -149,7 +149,6 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData }: Eq
   };
 
   const onSubmit = async (data: EquipmentFormValues) => {
-    setIsSaving(true);
     let photoUrl = initialData?.photoUrl || '';
     const photoAiHint = initialData?.photoAiHint || 'climbing gear';
 
@@ -159,12 +158,11 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData }: Eq
         photoUrl = await fileToDataUri(photoFile);
       } catch (error) {
         console.error('Erreur lors de la conversion du fichier:', error);
-        setIsSaving(false);
         return;
       }
     }
 
-    const newEquipment: Omit<Equipment, 'id'> = {
+    const newEquipment: Omit<Equipment, 'id' | 'userId'> = {
       name: data.name,
       type: data.type,
       serialNumber: data.serialNumber,
@@ -178,7 +176,6 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData }: Eq
       archived: data.archived,
     };
     onSave(newEquipment, initialData?.id);
-    setIsSaving(false);
   };
 
   const DatePicker = ({ name, label }: { name: 'purchaseDate' | 'serviceStartDate'; label: string }) => (
@@ -298,8 +295,8 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData }: Eq
             </div>
           </div>
           <SheetFooter>
-            <Button type="submit" disabled={isSaving}>
-              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Enregistrer
             </Button>
           </SheetFooter>
