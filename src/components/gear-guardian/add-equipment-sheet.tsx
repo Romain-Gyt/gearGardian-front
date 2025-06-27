@@ -23,38 +23,28 @@ import { CalendarIcon, Loader2 } from 'lucide-react';
 import { cn, } from '@/lib/utils';
 import { format } from 'date-fns';
 import type { Equipment } from '@/lib/types';
-import { useToast } from '@/hooks/use-toast';
+import { fr } from 'date-fns/locale';
 
 const equipmentSchema = z.object({
-  name: z.string().min(3, 'Name must be at least 3 characters'),
-  purchaseDate: z.date({ required_error: 'Purchase date is required' }),
-  lifespanYears: z.coerce.number().min(1, 'Lifespan must be at least 1 year').max(50, 'Lifespan cannot exceed 50 years'),
-  description: z.string().min(10, 'Description must be at least 10 characters'),
+  name: z.string().min(3, 'Le nom doit comporter au moins 3 caractères'),
+  purchaseDate: z.date({ required_error: 'La date d\'achat est requise' }),
+  lifespanYears: z.coerce.number().min(1, 'La durée de vie doit être d\'au moins 1 an').max(50, 'La durée de vie ne peut pas dépasser 50 ans'),
+  description: z.string().min(10, 'La description doit comporter au moins 10 caractères'),
   manufacturerData: z.string().optional(),
-  photo: z.any().refine(files => files?.length === 1, 'Photo is required.'),
+  photo: z.any().refine(files => files?.length === 1, 'La photo est requise.'),
 });
 
 type EquipmentFormValues = z.infer<typeof equipmentSchema>;
 
 interface AddEquipmentSheetProps {
   children: React.ReactNode;
-  onSave: (equipment: Equipment) => void;
+  onSave: (equipment: Omit<Equipment, 'id'>) => void;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }
 
-const fileToDataUri = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-};
-
 export function AddEquipmentSheet({ children, onSave, isOpen, onOpenChange }: AddEquipmentSheetProps) {
   const [isSaving, setIsSaving] = React.useState(false);
-  const { toast } = useToast();
   const form = useForm<EquipmentFormValues>({
     resolver: zodResolver(equipmentSchema),
     defaultValues: {
@@ -62,35 +52,21 @@ export function AddEquipmentSheet({ children, onSave, isOpen, onOpenChange }: Ad
     },
   });
 
-  const onSubmit = async (data: EquipmentFormValues) => {
+  const onSubmit = (data: EquipmentFormValues) => {
     setIsSaving(true);
-    try {
-        const photoFile = data.photo[0];
-        const photoDataUri = await fileToDataUri(photoFile);
-
-        const newEquipment: Equipment = {
-            id: `equip-${Date.now()}`,
-            name: data.name,
-            purchaseDate: data.purchaseDate,
-            lifespanYears: data.lifespanYears,
-            description: data.description,
-            manufacturerData: data.manufacturerData || '',
-            photoUrl: URL.createObjectURL(photoFile),
-            photoDataUri: photoDataUri,
-            photoAiHint: 'climbing gear'
-        };
-        onSave(newEquipment);
-        form.reset();
-    } catch (error) {
-        console.error('Failed to add equipment', error);
-        toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: 'Failed to process the photo. Please try a different image.',
-        });
-    } finally {
-        setIsSaving(false);
-    }
+    const photoFile = data.photo[0];
+    const newEquipment: Omit<Equipment, 'id'> = {
+        name: data.name,
+        purchaseDate: data.purchaseDate,
+        lifespanYears: data.lifespanYears,
+        description: data.description,
+        manufacturerData: data.manufacturerData || '',
+        photoUrl: URL.createObjectURL(photoFile),
+        photoAiHint: 'climbing gear',
+    };
+    onSave(newEquipment);
+    form.reset();
+    setIsSaving(false);
   };
 
   return (
@@ -99,14 +75,14 @@ export function AddEquipmentSheet({ children, onSave, isOpen, onOpenChange }: Ad
       <SheetContent className="sm:max-w-lg w-[90vw] overflow-y-auto">
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <SheetHeader>
-            <SheetTitle className="font-headline">Add New Equipment</SheetTitle>
+            <SheetTitle className="font-headline">Ajouter un équipement</SheetTitle>
             <SheetDescription>
-              Fill in the details of your new climbing gear. Click save when you're done.
+              Remplissez les détails de votre nouvel équipement. Cliquez sur enregistrer lorsque vous avez terminé.
             </SheetDescription>
           </SheetHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Equipment Name</Label>
+              <Label htmlFor="name">Nom de l'équipement</Label>
               <Input id="name" {...form.register('name')} />
               {form.formState.errors.name && (
                 <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
@@ -121,7 +97,7 @@ export function AddEquipmentSheet({ children, onSave, isOpen, onOpenChange }: Ad
             </div>
              <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                    <Label>Purchase Date</Label>
+                    <Label>Date d'achat</Label>
                      <Popover>
                         <PopoverTrigger asChild>
                         <Button
@@ -132,11 +108,12 @@ export function AddEquipmentSheet({ children, onSave, isOpen, onOpenChange }: Ad
                             )}
                         >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {form.watch('purchaseDate') ? format(form.watch('purchaseDate'), 'PPP') : <span>Pick a date</span>}
+                            {form.watch('purchaseDate') ? format(form.watch('purchaseDate'), 'PPP', { locale: fr }) : <span>Choisir une date</span>}
                         </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
                         <Calendar
+                            locale={fr}
                             mode="single"
                             selected={form.watch('purchaseDate')}
                             onSelect={(date) => form.setValue('purchaseDate', date as Date)}
@@ -150,7 +127,7 @@ export function AddEquipmentSheet({ children, onSave, isOpen, onOpenChange }: Ad
                     )}
                 </div>
                 <div className="grid gap-2">
-                    <Label htmlFor="lifespanYears">Lifespan (years)</Label>
+                    <Label htmlFor="lifespanYears">Durée de vie (ans)</Label>
                     <Input id="lifespanYears" type="number" {...form.register('lifespanYears')} />
                     {form.formState.errors.lifespanYears && (
                         <p className="text-sm text-destructive">{form.formState.errors.lifespanYears.message}</p>
@@ -158,17 +135,17 @@ export function AddEquipmentSheet({ children, onSave, isOpen, onOpenChange }: Ad
                 </div>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="description">Description & Usage History</Label>
+              <Label htmlFor="description">Description et historique d'utilisation</Label>
               <Textarea id="description" {...form.register('description')} />
                {form.formState.errors.description && (
                 <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>
               )}
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="manufacturerData">Manufacturer Data (Optional)</Label>
+              <Label htmlFor="manufacturerData">Données fabricant (Optionnel)</Label>
               <Textarea
                 id="manufacturerData"
-                placeholder="e.g., brand, model, recommended retirement guidelines..."
+                placeholder="ex: marque, modèle, recommendations de mise au rebut..."
                 {...form.register('manufacturerData')}
               />
             </div>
@@ -176,7 +153,7 @@ export function AddEquipmentSheet({ children, onSave, isOpen, onOpenChange }: Ad
           <SheetFooter>
             <Button type="submit" disabled={isSaving}>
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Equipment
+              Enregistrer l'équipement
             </Button>
           </SheetFooter>
         </form>
