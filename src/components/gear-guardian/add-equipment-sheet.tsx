@@ -4,25 +4,26 @@ import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { CalendarIcon, Loader2 } from 'lucide-react';
+
+import { cn } from '@/lib/utils';
+import type { Equipment } from '@/lib/types';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Sheet,
   SheetContent,
   SheetDescription,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
-  SheetFooter,
 } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import type { Equipment } from '@/lib/types';
-import { fr } from 'date-fns/locale';
 
 interface EquipmentSheetProps {
   onSave: (equipment: Omit<Equipment, 'id'>, id?: string) => void;
@@ -35,39 +36,46 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData }: Eq
   const [isSaving, setIsSaving] = React.useState(false);
   const isEditMode = !!initialData;
 
-  const equipmentSchema = z.object({
-    name: z.string().min(3, 'Le nom doit comporter au moins 3 caractères'),
-    purchaseDate: z.date({ required_error: "La date d'achat est requise" }),
-    lifespanYears: z.coerce.number().min(1, 'La durée de vie doit être d\'au moins 1 an').max(50, 'La durée de vie ne peut pas dépasser 50 ans'),
-    description: z.string().min(10, 'La description doit comporter au moins 10 caractères'),
+  const equipmentSchema = React.useMemo(() => z.object({
+    name: z.string().min(3, { message: 'Le nom doit comporter au moins 3 caractères.' }),
+    purchaseDate: z.date({ required_error: "La date d'achat est requise." }),
+    lifespanYears: z.coerce.number().min(1, "La durée de vie doit être d'au moins 1 an.").max(50, 'La durée de vie ne peut pas dépasser 50 ans.'),
+    description: z.string().min(10, { message: 'La description doit comporter au moins 10 caractères.' }),
     manufacturerData: z.string().optional(),
-    photo: z.any().refine(files => isEditMode || (files && files.length === 1), 'La photo est requise.'),
-  });
-  
+    photo: z.any().refine(
+      (files) => {
+        if (isEditMode) return true; // Photo is optional in edit mode
+        return files?.length === 1; // Photo is required in create mode
+      },
+      { message: 'La photo est requise.' }
+    ),
+  }), [isEditMode]);
+
   type EquipmentFormValues = z.infer<typeof equipmentSchema>;
 
   const form = useForm<EquipmentFormValues>({
     resolver: zodResolver(equipmentSchema),
+    defaultValues: {
+      name: '',
+      purchaseDate: undefined,
+      lifespanYears: 10,
+      description: '',
+      manufacturerData: '',
+      photo: undefined,
+    },
   });
 
   React.useEffect(() => {
     if (isOpen) {
-        if (initialData) {
-            form.reset({
-                ...initialData,
-                purchaseDate: new Date(initialData.purchaseDate),
-                photo: undefined,
-            });
-        } else {
-            form.reset({
-                name: '',
-                purchaseDate: undefined,
-                lifespanYears: 10,
-                description: '',
-                manufacturerData: '',
-                photo: undefined,
-            });
-        }
+      if (initialData) {
+        form.reset({
+          ...initialData,
+          purchaseDate: new Date(initialData.purchaseDate),
+          photo: undefined, // Reset photo input
+        });
+      } else {
+        form.reset(); // Reset to defaultValues for new item
+      }
     }
   }, [isOpen, initialData, form]);
 
@@ -89,27 +97,27 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData }: Eq
   const onSubmit = async (data: EquipmentFormValues) => {
     setIsSaving(true);
     let photoUrl = initialData?.photoUrl || '';
-    let photoAiHint = initialData?.photoAiHint || 'climbing gear';
+    const photoAiHint = initialData?.photoAiHint || 'climbing gear';
 
     if (data.photo && data.photo.length > 0) {
-        const photoFile = data.photo[0];
-        try {
-            photoUrl = await fileToDataUri(photoFile);
-        } catch (error) {
-            console.error("Erreur lors de la conversion du fichier:", error);
-            setIsSaving(false);
-            return;
-        }
+      const photoFile = data.photo[0];
+      try {
+        photoUrl = await fileToDataUri(photoFile);
+      } catch (error) {
+        console.error("Erreur lors de la conversion du fichier:", error);
+        setIsSaving(false);
+        return;
+      }
     }
     
     const newEquipment: Omit<Equipment, 'id'> = {
-        name: data.name,
-        purchaseDate: data.purchaseDate,
-        lifespanYears: data.lifespanYears,
-        description: data.description,
-        manufacturerData: data.manufacturerData || '',
-        photoUrl: photoUrl,
-        photoAiHint: photoAiHint,
+      name: data.name,
+      purchaseDate: data.purchaseDate,
+      lifespanYears: data.lifespanYears,
+      description: data.description,
+      manufacturerData: data.manufacturerData || '',
+      photoUrl: photoUrl,
+      photoAiHint: photoAiHint,
     };
     onSave(newEquipment, initialData?.id);
     setIsSaving(false);
