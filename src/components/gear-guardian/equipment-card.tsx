@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import type { Equipment } from '@/lib/types';
-import { CalendarDays, ShieldCheck, ShieldAlert, ShieldQuestion, MoreHorizontal, Pencil, Trash2, Archive } from 'lucide-react';
+import { CalendarDays, ShieldCheck, ShieldAlert, ShieldQuestion, MoreHorizontal, Pencil, Trash2, Archive, BrainCircuit } from 'lucide-react';
 import {
     Tooltip,
     TooltipContent,
@@ -14,16 +14,17 @@ import {
     TooltipTrigger,
   } from "@/components/ui/tooltip"
 import { Button } from '../ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
 interface EquipmentCardProps {
   equipment: Equipment;
   viewMode: 'grid' | 'list';
   onEdit: (equipment: Equipment) => void;
   onDelete: (id: string) => void;
+  onAnalyze: (equipment: Equipment) => void;
 }
 
-export function EquipmentCard({ equipment, viewMode, onEdit, onDelete }: EquipmentCardProps) {
+export function EquipmentCard({ equipment, viewMode, onEdit, onDelete, onAnalyze }: EquipmentCardProps) {
   const { serviceStartDate, expectedEndOfLife, archived, purchaseDate } = equipment;
   
   const now = Date.now();
@@ -80,6 +81,11 @@ export function EquipmentCard({ equipment, viewMode, onEdit, onDelete }: Equipme
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onAnalyze(equipment)}>
+                    <BrainCircuit className="mr-2 size-4" />
+                    Analyse IA
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => onEdit(equipment)}>
                     <Pencil className="mr-2 size-4" />
                     Modifier
@@ -127,6 +133,11 @@ export function EquipmentCard({ equipment, viewMode, onEdit, onDelete }: Equipme
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => onAnalyze(equipment)}>
+                            <BrainCircuit className="mr-2 size-4" />
+                            Analyse IA
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => onEdit(equipment)}>
                             <Pencil className="mr-2 size-4" />
                             Modifier

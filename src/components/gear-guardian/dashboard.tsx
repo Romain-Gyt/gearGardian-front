@@ -14,13 +14,6 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -46,15 +39,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { useToast } from '@/hooks/use-toast';
 import { EquipmentCard } from './equipment-card';
 import { EquipmentSheet } from './add-equipment-sheet';
 import { Tutorials } from './tutorials';
 import { Logo } from './logo';
+import { GearHealthDialog } from './gear-health-dialog';
 import type { Equipment } from '@/lib/types';
 import { EquipmentType } from '@/lib/types';
 import { ModeToggle } from '../mode-toggle';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '../ui/button';
+import { analyzeGearHealth, type GearHealthOutput } from '@/ai/flows/gear-health-analyzer';
+
 
 const initialEquipment: Equipment[] = [
   {
@@ -105,6 +102,7 @@ type View = 'equipment' | 'tutorials';
 
 export function Dashboard() {
   const router = useRouter();
+  const { toast } = useToast();
   const [equipment, setEquipment] = React.useState<Equipment[]>(initialEquipment);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [editingEquipment, setEditingEquipment] = React.useState<Equipment | null>(null);
@@ -112,6 +110,10 @@ export function Dashboard() {
   const [activeView, setActiveView] = React.useState<View>('equipment');
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
   const [itemToDelete, setItemToDelete] = React.useState<string | null>(null);
+
+  const [isHealthDialogOpen, setIsHealthDialogOpen] = React.useState(false);
+  const [healthAnalysis, setHealthAnalysis] = React.useState<GearHealthOutput | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = React.useState(false);
 
   const handleSaveEquipment = (item: Omit<Equipment, 'id'>, id?: string) => {
     if (id) {
@@ -144,6 +146,31 @@ export function Dashboard() {
       setEquipment(prev => prev.filter(e => e.id !== itemToDelete));
       setShowDeleteConfirm(false);
       setItemToDelete(null);
+    }
+  };
+
+  const handleAnalyzeRequest = async (item: Equipment) => {
+    setHealthAnalysis(null);
+    setIsAnalyzing(true);
+    setIsHealthDialogOpen(true);
+
+    try {
+      const result = await analyzeGearHealth({
+        photoDataUri: item.photoUrl,
+        description: item.description,
+        manufacturerData: item.manufacturerData,
+      });
+      setHealthAnalysis(result);
+    } catch (error) {
+        console.error("Erreur lors de l'analyse IA:", error);
+        toast({
+            variant: "destructive",
+            title: "Erreur d'analyse",
+            description: "L'analyse par IA a échoué. Veuillez réessayer.",
+        });
+        setIsHealthDialogOpen(false);
+    } finally {
+        setIsAnalyzing(false);
     }
   };
   
@@ -299,6 +326,7 @@ export function Dashboard() {
                     viewMode={viewMode}
                     onEdit={handleEditItem}
                     onDelete={handleDeleteRequest}
+                    onAnalyze={handleAnalyzeRequest}
                   />
                 ))}
               </div>
@@ -328,6 +356,12 @@ export function Dashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <GearHealthDialog
+        isOpen={isHealthDialogOpen}
+        onOpenChange={setIsHealthDialogOpen}
+        analysis={healthAnalysis}
+        isLoading={isAnalyzing}
+      />
     </div>
   );
 }
