@@ -47,7 +47,8 @@ const equipmentFormSchema = z.object({
   serialNumber: z.string().optional(),
   purchaseDate: z.date({ required_error: "La date d'achat est requise." }),
   serviceStartDate: z.date({ required_error: 'La date de mise en service est requise.' }),
-  expectedEndOfLife: z.date({ required_error: 'La date de fin de vie est requise.' }),
+  lifespanInYears: z.coerce.number({invalid_type_error: 'Veuillez entrer un nombre valide.'}).int().min(1, { message: "La durée de vie doit être d'au moins 1 an." }),
+  expectedEndOfLife: z.date(),
   description: z.string().min(10, { message: 'La description doit comporter au moins 10 caractères.' }),
   manufacturerData: z.string().optional(),
   photo: z.any().optional(),
@@ -73,43 +74,56 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData }: Eq
 
   const form = useForm<EquipmentFormValues>({
     resolver: zodResolver(validationSchema),
-    defaultValues: {
-      name: '',
-      type: EquipmentType.OTHER,
-      serialNumber: '',
-      purchaseDate: new Date(),
-      serviceStartDate: new Date(),
-      expectedEndOfLife: new Date(new Date().setFullYear(new Date().getFullYear() + 10)),
-      description: '',
-      manufacturerData: '',
-      photo: undefined,
-      archived: false,
-    },
   });
+
+  const { watch, setValue } = form;
+  const serviceStartDate = watch('serviceStartDate');
+  const lifespanInYears = watch('lifespanInYears');
+  const calculatedEol = watch('expectedEndOfLife');
+
+  React.useEffect(() => {
+    if (serviceStartDate && lifespanInYears && Number(lifespanInYears) > 0) {
+      const eol = new Date(serviceStartDate);
+      eol.setFullYear(eol.getFullYear() + Number(lifespanInYears));
+      setValue('expectedEndOfLife', eol, { shouldValidate: true });
+    }
+  }, [serviceStartDate, lifespanInYears, setValue]);
+
 
   React.useEffect(() => {
     if (isOpen) {
       if (initialData) {
+        const serviceDate = new Date(initialData.serviceStartDate);
+        const endDate = new Date(initialData.expectedEndOfLife);
+        const lifespan = Math.round((endDate.getTime() - serviceDate.getTime()) / (1000 * 60 * 60 * 24 * 365.25));
+        
         form.reset({
           name: initialData.name,
           type: initialData.type,
           serialNumber: initialData.serialNumber || '',
           purchaseDate: new Date(initialData.purchaseDate),
-          serviceStartDate: new Date(initialData.serviceStartDate),
-          expectedEndOfLife: new Date(initialData.expectedEndOfLife),
+          serviceStartDate: serviceDate,
+          lifespanInYears: lifespan > 0 ? lifespan : 10,
+          expectedEndOfLife: endDate,
           description: initialData.description,
           manufacturerData: initialData.manufacturerData,
           photo: undefined,
           archived: initialData.archived,
         });
       } else {
+        const defaultServiceDate = new Date();
+        const defaultLifespan = 10;
+        const defaultEndDate = new Date(defaultServiceDate);
+        defaultEndDate.setFullYear(defaultEndDate.getFullYear() + defaultLifespan);
+        
         form.reset({
           name: '',
           type: EquipmentType.OTHER,
           serialNumber: '',
           purchaseDate: new Date(),
-          serviceStartDate: new Date(),
-          expectedEndOfLife: new Date(new Date().setFullYear(new Date().getFullYear() + 10)),
+          serviceStartDate: defaultServiceDate,
+          lifespanInYears: defaultLifespan,
+          expectedEndOfLife: defaultEndDate,
           description: '',
           manufacturerData: '',
           photo: undefined,
@@ -167,7 +181,7 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData }: Eq
     setIsSaving(false);
   };
 
-  const DatePicker = ({ name, label }: { name: 'purchaseDate' | 'serviceStartDate' | 'expectedEndOfLife'; label: string }) => (
+  const DatePicker = ({ name, label }: { name: 'purchaseDate' | 'serviceStartDate'; label: string }) => (
     <div className="grid gap-2">
       <Label>{label}</Label>
       <Controller
@@ -253,7 +267,20 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData }: Eq
               <DatePicker name="purchaseDate" label="Date d'achat" />
               <DatePicker name="serviceStartDate" label="Date de mise en service" />
             </div>
-             <DatePicker name="expectedEndOfLife" label="Date de fin de vie prévue" />
+             
+            <div className="grid grid-cols-2 gap-4 items-end">
+                <div className="grid gap-2">
+                    <Label htmlFor="lifespanInYears">Durée de vie (ans)</Label>
+                    <Input id="lifespanInYears" type="number" {...form.register('lifespanInYears')} />
+                    {form.formState.errors.lifespanInYears && <p className="text-sm text-destructive">{form.formState.errors.lifespanInYears.message as string}</p>}
+                </div>
+                <div className="grid gap-2">
+                    <Label>Date de fin de vie prévue</Label>
+                    <div className="text-sm font-medium h-10 flex items-center px-3 py-2 rounded-md border border-input bg-muted">
+                        <p>{calculatedEol ? format(calculatedEol, 'PPP', { locale: fr }) : '...'}</p>
+                    </div>
+                </div>
+            </div>
 
             <div className="grid gap-2">
               <Label htmlFor="description">Commentaires (description, usure, etc.)</Label>
