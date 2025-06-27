@@ -11,10 +11,37 @@ import { Switch } from "@/components/ui/switch";
 import Link from "next/link";
 import { Logo } from "@/components/gear-guardian/logo";
 import { ModeToggle } from "@/components/mode-toggle";
+import { useToast } from '@/hooks/use-toast';
 
 export default function ProfilePage() {
+  const { toast } = useToast();
   const [notificationThreshold, setNotificationThreshold] = React.useState(80);
   const [emailNotifications, setEmailNotifications] = React.useState(true);
+
+  const handleProfileSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    toast({
+      title: "Profil mis à jour",
+      description: "Vos informations personnelles ont été enregistrées.",
+    });
+  };
+
+  const handlePasswordSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Dans une vraie application, vous videriez les champs ici.
+    toast({
+      title: "Mot de passe mis à jour",
+      description: "Votre mot de passe a été changé avec succès.",
+    });
+  };
+
+  const handleNotificationSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    toast({
+      title: "Préférences enregistrées",
+      description: "Vos paramètres de notification ont été mis à jour.",
+    });
+  };
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">
@@ -58,7 +85,7 @@ export default function ProfilePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form className="grid gap-4">
+                <form className="grid gap-4" onSubmit={handleProfileSave}>
                   <div className="flex items-center gap-4">
                         <Avatar className="h-20 w-20">
                             <AvatarImage src="https://placehold.co/100x100.png" alt="Avatar" data-ai-hint="person portrait"/>
@@ -81,7 +108,7 @@ export default function ProfilePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                 <form className="grid gap-4">
+                 <form className="grid gap-4" onSubmit={handlePasswordSave}>
                     <Input placeholder="Mot de passe actuel" type="password" />
                     <Input placeholder="Nouveau mot de passe" type="password" />
                     <Input placeholder="Confirmer le nouveau mot de passe" type="password" />
@@ -96,41 +123,43 @@ export default function ProfilePage() {
                   Gérez quand et comment vous recevez des alertes sur votre équipement.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-6">
-                <div className="grid gap-2">
-                  <Label htmlFor="threshold">Seuil d'alerte avant fin de vie</Label>
-                  <div className="flex items-center gap-4 pt-2">
-                    <Slider
-                      id="threshold"
-                      value={[notificationThreshold]}
-                      onValueChange={(value) => setNotificationThreshold(value[0])}
-                      max={100}
-                      step={5}
-                    />
-                    <span className="w-16 text-right font-mono text-lg">{notificationThreshold}%</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Recevoir une notification quand la durée de vie utilisée atteint ce pourcentage.
-                  </p>
-                </div>
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="email-notifications" className="text-base">Notifications par e-mail</Label>
+              <form onSubmit={handleNotificationSave}>
+                <CardContent className="grid gap-6">
+                  <div className="grid gap-2">
+                    <Label htmlFor="threshold">Seuil d'alerte avant fin de vie</Label>
+                    <div className="flex items-center gap-4 pt-2">
+                      <Slider
+                        id="threshold"
+                        value={[notificationThreshold]}
+                        onValueChange={(value) => setNotificationThreshold(value[0])}
+                        max={100}
+                        step={5}
+                      />
+                      <span className="w-16 text-right font-mono text-lg">{notificationThreshold}%</span>
+                    </div>
                     <p className="text-xs text-muted-foreground">
-                      Recevoir des rappels d'expiration et des alertes de sécurité par e-mail.
+                      Recevoir une notification quand la durée de vie utilisée atteint ce pourcentage.
                     </p>
                   </div>
-                  <Switch
-                    id="email-notifications"
-                    checked={emailNotifications}
-                    onCheckedChange={setEmailNotifications}
-                    aria-label="Activer les notifications par e-mail"
-                  />
-                </div>
-              </CardContent>
-              <CardFooter>
-                 <Button className="w-fit">Enregistrer les préférences</Button>
-              </CardFooter>
+                  <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="email-notifications" className="text-base">Notifications par e-mail</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Recevoir des rappels d'expiration et des alertes de sécurité par e-mail.
+                      </p>
+                    </div>
+                    <Switch
+                      id="email-notifications"
+                      checked={emailNotifications}
+                      onCheckedChange={setEmailNotifications}
+                      aria-label="Activer les notifications par e-mail"
+                    />
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button type="submit" className="w-fit">Enregistrer les préférences</Button>
+                </CardFooter>
+              </form>
             </Card>
           </div>
         </div>
