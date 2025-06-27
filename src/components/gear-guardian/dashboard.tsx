@@ -4,12 +4,12 @@ import * as React from 'react';
 import {
   ShieldCheck,
   PlusCircle,
-  Settings,
   User,
   PanelLeft,
   Search,
   LayoutGrid,
   List,
+  BookOpen,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -35,11 +35,24 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { EquipmentCard } from './equipment-card';
-import { AddEquipmentSheet } from './add-equipment-sheet';
+import { EquipmentSheet } from './add-equipment-sheet';
+import { Tutorials } from './tutorials';
 import { Logo } from './logo';
 import type { Equipment } from '@/lib/types';
 import { ModeToggle } from '../mode-toggle';
+import { cn } from '@/lib/utils';
+import { buttonVariants } from '../ui/button';
 
 const initialEquipment: Equipment[] = [
   {
@@ -74,16 +87,84 @@ const initialEquipment: Equipment[] = [
   },
 ];
 
+type View = 'equipment' | 'tutorials';
+
 export function Dashboard() {
   const [equipment, setEquipment] = React.useState<Equipment[]>(initialEquipment);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+  const [editingEquipment, setEditingEquipment] = React.useState<Equipment | null>(null);
   const [viewMode, setViewMode] = React.useState<'grid' | 'list'>('grid');
+  const [activeView, setActiveView] = React.useState<View>('equipment');
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+  const [itemToDelete, setItemToDelete] = React.useState<string | null>(null);
 
-  const addEquipment = (item: Omit<Equipment, 'id'>) => {
-    const newEquipment = { ...item, id: `equip-${Date.now()}` };
-    setEquipment(prev => [newEquipment, ...prev]);
+  const handleSaveEquipment = (item: Omit<Equipment, 'id'>, id?: string) => {
+    if (id) {
+      setEquipment(prev => prev.map(e => e.id === id ? { ...e, ...item, id } : e));
+    } else {
+      const newEquipment = { ...item, id: `equip-${Date.now()}` };
+      setEquipment(prev => [newEquipment, ...prev]);
+    }
     setIsSheetOpen(false);
+    setEditingEquipment(null);
   };
+  
+  const handleAddItem = () => {
+    setEditingEquipment(null);
+    setIsSheetOpen(true);
+  }
+
+  const handleEditItem = (equipment: Equipment) => {
+    setEditingEquipment(equipment);
+    setIsSheetOpen(true);
+  };
+
+  const handleDeleteRequest = (id: string) => {
+    setItemToDelete(id);
+    setShowDeleteConfirm(true);
+  };
+  
+  const confirmDelete = () => {
+    if (itemToDelete) {
+      setEquipment(prev => prev.filter(e => e.id !== itemToDelete));
+      setShowDeleteConfirm(false);
+      setItemToDelete(null);
+    }
+  };
+  
+  const NavLink = ({ view, label, icon: Icon }: { view: View, label: string, icon: React.ElementType }) => (
+      <a
+        href="#"
+        onClick={(e) => {
+            e.preventDefault();
+            setActiveView(view);
+        }}
+        className={cn(
+            "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+            activeView === view && "bg-muted text-primary"
+        )}
+      >
+        <Icon className="h-4 w-4" />
+        {label}
+      </a>
+  );
+
+  const MobileNavLink = ({ view, label, icon: Icon }: { view: View, label: string, icon: React.ElementType }) => (
+      <a
+        href="#"
+        onClick={(e) => {
+            e.preventDefault();
+            setActiveView(view);
+        }}
+        className={cn(
+            "mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground",
+            activeView === view && "bg-muted text-foreground"
+        )}
+      >
+        <Icon className="h-5 w-5" />
+        {label}
+      </a>
+  );
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
@@ -97,20 +178,8 @@ export function Dashboard() {
           </div>
           <div className="flex-1">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-              <a
-                href="#"
-                className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-primary transition-all hover:text-primary"
-              >
-                <ShieldCheck className="h-4 w-4" />
-                Mon Équipement
-              </a>
-              <a
-                href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-              >
-                <Settings className="h-4 w-4" />
-                Paramètres
-              </a>
+              <NavLink view="equipment" label="Mon Équipement" icon={ShieldCheck} />
+              <NavLink view="tutorials" label="Tutoriels" icon={BookOpen} />
             </nav>
           </div>
           <div className="mt-auto p-4">
@@ -143,25 +212,13 @@ export function Dashboard() {
               <nav className="grid gap-2 text-lg font-medium">
                 <a
                   href="#"
-                  className="flex items-center gap-2 text-lg font-semibold"
+                  className="flex items-center gap-2 text-lg font-semibold mb-4"
                 >
                   <Logo className="h-6 w-6" />
                   <span className="font-headline">GearGuardien</span>
                 </a>
-                <a
-                  href="#"
-                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl bg-muted px-3 py-2 text-foreground hover:text-foreground"
-                >
-                  <ShieldCheck className="h-5 w-5" />
-                  Mon Équipement
-                </a>
-                <a
-                  href="#"
-                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
-                >
-                  <Settings className="h-5 w-5" />
-                  Paramètres
-                </a>
+                <MobileNavLink view="equipment" label="Mon Équipement" icon={ShieldCheck} />
+                <MobileNavLink view="tutorials" label="Tutoriels" icon={BookOpen} />
               </nav>
                <div className="mt-auto">
                 <Card>
@@ -181,24 +238,24 @@ export function Dashboard() {
             </SheetContent>
           </Sheet>
           <div className="w-full flex-1">
-            <form>
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Rechercher un équipement..."
-                  className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/3"
-                />
-              </div>
-            </form>
+            {activeView === 'equipment' && (
+                <form>
+                    <div className="relative">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                        type="search"
+                        placeholder="Rechercher un équipement..."
+                        className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/3"
+                        />
+                    </div>
+                </form>
+            )}
           </div>
-           <AddEquipmentSheet onSave={addEquipment} isOpen={isSheetOpen} onOpenChange={setIsSheetOpen}>
-              <Button size="sm" className="gap-1">
-                <PlusCircle className="h-4 w-4" />
-                Ajouter un équipement
-              </Button>
-            </AddEquipmentSheet>
-            <ModeToggle />
+           <Button size="sm" className="gap-1" onClick={handleAddItem}>
+            <PlusCircle className="h-4 w-4" />
+            Ajouter un équipement
+          </Button>
+          <ModeToggle />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
@@ -217,43 +274,75 @@ export function Dashboard() {
           </DropdownMenu>
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg font-semibold md:text-2xl font-headline">Mon Équipement</h1>
-             <TooltipProvider>
-                <div className="flex items-center gap-2">
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('grid')}>
-                                <LayoutGrid className="size-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Vue grille</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                             <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('list')}>
-                                <List className="size-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Vue liste</TooltipContent>
-                    </Tooltip>
-                </div>
-            </TooltipProvider>
-          </div>
+          {activeView === 'equipment' ? (
+            <>
+              <div className="flex items-center justify-between">
+                <h1 className="text-lg font-semibold md:text-2xl font-headline">Mon Équipement</h1>
+                <TooltipProvider>
+                    <div className="flex items-center gap-2">
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('grid')}>
+                                    <LayoutGrid className="size-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Vue grille</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('list')}>
+                                    <List className="size-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Vue liste</TooltipContent>
+                        </Tooltip>
+                    </div>
+                </TooltipProvider>
+              </div>
 
-          <div
-            className={
-              viewMode === 'grid'
-                ? 'grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
-                : 'flex flex-col gap-4'
-            }
-          >
-            {equipment.map(item => (
-              <EquipmentCard key={item.id} equipment={item} viewMode={viewMode}/>
-            ))}
-          </div>
+              <div
+                className={
+                  viewMode === 'grid'
+                    ? 'grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                    : 'flex flex-col gap-4'
+                }
+              >
+                {equipment.map(item => (
+                  <EquipmentCard 
+                    key={item.id} 
+                    equipment={item} 
+                    viewMode={viewMode}
+                    onEdit={handleEditItem}
+                    onDelete={handleDeleteRequest}
+                  />
+                ))}
+              </div>
+            </>
+          ) : (
+            <Tutorials />
+          )}
         </main>
       </div>
+      <EquipmentSheet 
+        onSave={handleSaveEquipment} 
+        isOpen={isSheetOpen} 
+        onOpenChange={setIsSheetOpen}
+        initialData={editingEquipment}
+      />
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Êtes-vous absolument sûr?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. Cela supprimera définitivement cet équipement de vos archives.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setItemToDelete(null)}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className={buttonVariants({ variant: 'destructive' })}>Supprimer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -11,7 +11,6 @@ import {
   SheetHeader,
   SheetTitle,
   SheetFooter,
-  SheetTrigger,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,64 +19,110 @@ import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Loader2 } from 'lucide-react';
-import { cn, } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import type { Equipment } from '@/lib/types';
 import { fr } from 'date-fns/locale';
 
-const equipmentSchema = z.object({
-  name: z.string().min(3, 'Le nom doit comporter au moins 3 caractères'),
-  purchaseDate: z.date({ required_error: 'La date d\'achat est requise' }),
-  lifespanYears: z.coerce.number().min(1, 'La durée de vie doit être d\'au moins 1 an').max(50, 'La durée de vie ne peut pas dépasser 50 ans'),
-  description: z.string().min(10, 'La description doit comporter au moins 10 caractères'),
-  manufacturerData: z.string().optional(),
-  photo: z.any().refine(files => files?.length === 1, 'La photo est requise.'),
-});
-
-type EquipmentFormValues = z.infer<typeof equipmentSchema>;
-
-interface AddEquipmentSheetProps {
-  children: React.ReactNode;
-  onSave: (equipment: Omit<Equipment, 'id'>) => void;
+interface EquipmentSheetProps {
+  onSave: (equipment: Omit<Equipment, 'id'>, id?: string) => void;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  initialData?: Equipment | null;
 }
 
-export function AddEquipmentSheet({ children, onSave, isOpen, onOpenChange }: AddEquipmentSheetProps) {
+export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData }: EquipmentSheetProps) {
   const [isSaving, setIsSaving] = React.useState(false);
+  const isEditMode = !!initialData;
+
+  const equipmentSchema = z.object({
+    name: z.string().min(3, 'Le nom doit comporter au moins 3 caractères'),
+    purchaseDate: z.date({ required_error: "La date d'achat est requise" }),
+    lifespanYears: z.coerce.number().min(1, 'La durée de vie doit être d\'au moins 1 an').max(50, 'La durée de vie ne peut pas dépasser 50 ans'),
+    description: z.string().min(10, 'La description doit comporter au moins 10 caractères'),
+    manufacturerData: z.string().optional(),
+    photo: z.any().refine(files => isEditMode || (files && files.length === 1), 'La photo est requise.'),
+  });
+  
+  type EquipmentFormValues = z.infer<typeof equipmentSchema>;
+
   const form = useForm<EquipmentFormValues>({
     resolver: zodResolver(equipmentSchema),
-    defaultValues: {
-      lifespanYears: 10,
-    },
   });
 
-  const onSubmit = (data: EquipmentFormValues) => {
+  React.useEffect(() => {
+    if (isOpen) {
+        if (initialData) {
+            form.reset({
+                ...initialData,
+                purchaseDate: new Date(initialData.purchaseDate),
+                photo: undefined,
+            });
+        } else {
+            form.reset({
+                name: '',
+                purchaseDate: undefined,
+                lifespanYears: 10,
+                description: '',
+                manufacturerData: '',
+                photo: undefined,
+            });
+        }
+    }
+  }, [isOpen, initialData, form]);
+
+  const fileToDataUri = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          resolve(event.target.result as string);
+        } else {
+          reject(new Error("Échec de la lecture du fichier."));
+        }
+      };
+      reader.onerror = (error) => reject(error);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const onSubmit = async (data: EquipmentFormValues) => {
     setIsSaving(true);
-    const photoFile = data.photo[0];
+    let photoUrl = initialData?.photoUrl || '';
+    let photoAiHint = initialData?.photoAiHint || 'climbing gear';
+
+    if (data.photo && data.photo.length > 0) {
+        const photoFile = data.photo[0];
+        try {
+            photoUrl = await fileToDataUri(photoFile);
+        } catch (error) {
+            console.error("Erreur lors de la conversion du fichier:", error);
+            setIsSaving(false);
+            return;
+        }
+    }
+    
     const newEquipment: Omit<Equipment, 'id'> = {
         name: data.name,
         purchaseDate: data.purchaseDate,
         lifespanYears: data.lifespanYears,
         description: data.description,
         manufacturerData: data.manufacturerData || '',
-        photoUrl: URL.createObjectURL(photoFile),
-        photoAiHint: 'climbing gear',
+        photoUrl: photoUrl,
+        photoAiHint: photoAiHint,
     };
-    onSave(newEquipment);
-    form.reset();
+    onSave(newEquipment, initialData?.id);
     setIsSaving(false);
   };
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetTrigger asChild>{children}</SheetTrigger>
       <SheetContent className="sm:max-w-lg w-[90vw] overflow-y-auto">
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <SheetHeader>
-            <SheetTitle className="font-headline">Ajouter un équipement</SheetTitle>
+            <SheetTitle className="font-headline">{isEditMode ? "Modifier l'équipement" : "Ajouter un équipement"}</SheetTitle>
             <SheetDescription>
-              Remplissez les détails de votre nouvel équipement. Cliquez sur enregistrer lorsque vous avez terminé.
+              {isEditMode ? "Modifiez les détails de votre équipement." : "Remplissez les détails de votre nouvel équipement."} Cliquez sur enregistrer lorsque vous avez terminé.
             </SheetDescription>
           </SheetHeader>
           <div className="grid gap-4 py-4">
@@ -89,7 +134,7 @@ export function AddEquipmentSheet({ children, onSave, isOpen, onOpenChange }: Ad
               )}
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="photo">Photo</Label>
+              <Label htmlFor="photo">Photo {isEditMode && '(Optionnel: laisser vide pour garder l'ancienne)'}</Label>
               <Input id="photo" type="file" accept="image/*" {...form.register('photo')} />
               {form.formState.errors.photo && (
                 <p className="text-sm text-destructive">{form.formState.errors.photo.message as string}</p>
@@ -116,7 +161,7 @@ export function AddEquipmentSheet({ children, onSave, isOpen, onOpenChange }: Ad
                             locale={fr}
                             mode="single"
                             selected={form.watch('purchaseDate')}
-                            onSelect={(date) => form.setValue('purchaseDate', date as Date)}
+                            onSelect={(date) => form.setValue('purchaseDate', date as Date, { shouldValidate: true })}
                             initialFocus
                             disabled={(date) => date > new Date() || date < new Date('1990-01-01')}
                         />
@@ -153,7 +198,7 @@ export function AddEquipmentSheet({ children, onSave, isOpen, onOpenChange }: Ad
           <SheetFooter>
             <Button type="submit" disabled={isSaving}>
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Enregistrer l'équipement
+              Enregistrer
             </Button>
           </SheetFooter>
         </form>
