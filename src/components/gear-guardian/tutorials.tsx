@@ -22,7 +22,7 @@ export function Tutorials() {
                             <AccordionContent>
                                 <p className="mb-2">Une inspection régulière est cruciale pour votre sécurité. Faites glisser la corde entre vos doigts sur toute sa longueur pour détecter toute anomalie.</p>
                                 <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
-                                    <li><strong>Points de contrôle visuels :</strong> Recherchez des zones avec une gaine très pelucheuse, des décolorations, ou des endroits où l'âme est visible.</li>
+                                    <li><strong>Points de contrôle visuels :</strong> Recherchez des zones avec une gaine très pelucheuse, des décolorations, ou des endroits où l'âme (le noyau blanc intérieur) est visible à travers une gaine coupée ou usée.</li>
                                     <li><strong>Points de contrôle tactiles :</strong> Soyez attentif aux zones molles ou rigides, aux variations de diamètre ou à toute sensation de "vide" à l'intérieur de la corde.</li>
                                     <li><strong>Après une chute importante :</strong> Mettez immédiatement votre corde au rebut si elle a subi une chute de facteur élevé (proche de 2) ou si elle a arrêté une chute sur une arête vive.</li>
                                 </ul>
