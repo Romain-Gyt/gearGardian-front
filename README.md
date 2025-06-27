@@ -5,7 +5,7 @@ GearGuardian est une application web conçue pour aider les grimpeurs à gérer 
 ![Aperçu de GearGuardian]!![3518556c-874d-410a-81b9-05f07746f926](https://github.com/user-attachments/assets/346ee6d3-59fb-4907-a409-c9941d6bb6fd)
 )
 )
-*L'image ci-dessus est un placeholder. Pensez à la remplacer par une vraie capture d'écran de l'application.*
+
 
 ## Fonctionnalités
 
