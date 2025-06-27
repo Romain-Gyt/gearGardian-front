@@ -37,6 +37,9 @@ export default function ProfilePage() {
     getProfile()
       .then((data) => {
         setProfile(data);
+        if (data.alertThreshold !== undefined) {
+          setNotificationThreshold(data.alertThreshold);
+        }
         setIsLoading(false);
       })
       .catch(() => {
@@ -77,14 +80,19 @@ export default function ProfilePage() {
     });
   };
 
-  const handleNotificationSave = (e: React.FormEvent) => {
+  const handleNotificationSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return;
-    // In a real app, you would save these preferences to the user's document on the server.
-    toast({
-      title: "Préférences enregistrées",
-      description: "Vos paramètres de notification ont été mis à jour.",
-    });
+    try {
+      const updated = await updateProfile({ alertThreshold: notificationThreshold });
+      setProfile(updated);
+      toast({
+        title: "Préférences enregistrées",
+        description: "Vos paramètres de notification ont été mis à jour.",
+      });
+    } catch (error) {
+      toast({ variant: 'destructive', title: "Erreur", description: "La mise à jour a échoué." });
+    }
   };
 
   if (isLoading || !profile) {

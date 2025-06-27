@@ -50,7 +50,7 @@ import { ModeToggle } from '../mode-toggle';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '../ui/button';
 import { ExpirationBanner } from './expiration-banner';
-import { getEquipmentList, saveEquipment, deleteEquipment, logout } from '@/lib/api';
+import { getEquipmentList, saveEquipment, deleteEquipment, logout, getProfile } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 
@@ -73,6 +73,9 @@ export function Dashboard() {
   const [itemToDelete, setItemToDelete] = React.useState<string | null>(null);
   const [searchQuery, setSearchQuery] = React.useState('');
 
+  // User preference for expiration alerts
+  const [alertThreshold, setAlertThreshold] = React.useState(80);
+
   const [isHealthDialogOpen, setIsHealthDialogOpen] = React.useState(false);
   const [itemToAnalyze, setItemToAnalyze] = React.useState<Equipment | null>(null);
 
@@ -80,9 +83,18 @@ export function Dashboard() {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) {
       router.push('/');
-    } else {
-      setIsLoadingUser(false);
+      return;
     }
+    getProfile()
+      .then((profile) => {
+        if (profile.alertThreshold !== undefined) {
+          setAlertThreshold(profile.alertThreshold);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch profile', err);
+      })
+      .finally(() => setIsLoadingUser(false));
   }, [router]);
 
   const fetchEquipment = React.useCallback(async () => {
@@ -328,7 +340,7 @@ export function Dashboard() {
           </DropdownMenu>
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-          <ExpirationBanner equipment={equipment} />
+          <ExpirationBanner equipment={equipment} threshold={alertThreshold} />
           {activeView === 'equipment' ? (
             <>
               <div className="flex items-center justify-between">
