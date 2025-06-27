@@ -195,21 +195,6 @@ export function Dashboard() {
               <NavLink view="tutorials" label="Tutoriels" icon={BookOpen} />
             </nav>
           </div>
-          <div className="mt-auto p-4">
-            <Card>
-              <CardHeader className="p-2 pt-0 md:p-4">
-                <CardTitle className="font-headline">Passer à Pro</CardTitle>
-                <CardDescription>
-                  Débloquez les vérifications illimitées et les fonctions avancées.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-2 pt-0 md:p-4 md:pt-0">
-                <Button size="sm" className="w-full">
-                  Mettre à niveau
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </aside>
       <div className="flex flex-col">
@@ -233,21 +218,6 @@ export function Dashboard() {
                 <MobileNavLink view="equipment" label="Mon Équipement" icon={ShieldCheck} />
                 <MobileNavLink view="tutorials" label="Tutoriels" icon={BookOpen} />
               </nav>
-               <div className="mt-auto">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="font-headline">Passer à Pro</CardTitle>
-                    <CardDescription>
-                      Débloquez toutes les fonctionnalités et obtenez un accès illimité.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button size="sm" className="w-full">
-                      Mettre à niveau
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
             </SheetContent>
           </Sheet>
           <div className="w-full flex-1">
