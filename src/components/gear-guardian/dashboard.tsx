@@ -50,6 +50,7 @@ import { EquipmentSheet } from './add-equipment-sheet';
 import { Tutorials } from './tutorials';
 import { Logo } from './logo';
 import type { Equipment } from '@/lib/types';
+import { EquipmentType } from '@/lib/types';
 import { ModeToggle } from '../mode-toggle';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '../ui/button';
@@ -58,32 +59,44 @@ const initialEquipment: Equipment[] = [
   {
     id: 'rope-1',
     name: 'Corde d\'escalade dynamique',
+    type: EquipmentType.ROPE,
+    serialNumber: 'BEAL-2022-XYZ',
     photoUrl: 'https://placehold.co/600x400.png',
     photoAiHint: 'climbing rope',
     purchaseDate: new Date('2022-03-15'),
-    lifespanYears: 5,
+    serviceStartDate: new Date('2022-04-01'),
+    expectedEndOfLife: new Date('2027-03-15'),
     description: 'Corde dynamique de 60m pour l\'escalade sportive. Peu utilisée, le week-end.',
     manufacturerData: 'Beal Joker 9.1mm Unicore. Mise au rebut recommandée après 5 ans d\'usage modéré, ou 10 ans au total.',
+    archived: false,
   },
   {
     id: 'harness-1',
     name: 'Baudrier Arc\'teryx AR-395a',
+    type: EquipmentType.HARNESS,
+    serialNumber: 'AR-395a-2021-ABC',
     photoUrl: 'https://placehold.co/600x400.png',
     photoAiHint: 'climbing harness',
     purchaseDate: new Date('2021-08-01'),
-    lifespanYears: 7,
+    serviceStartDate: new Date('2021-08-01'),
+    expectedEndOfLife: new Date('2028-08-01'),
     description: 'Baudrier principal pour toutes les disciplines. Montre une usure mineure sur les pontets.',
     manufacturerData: 'La durée de vie standard d\'un baudrier Arc\'teryx est de 7 ans à partir de la date de fabrication dans des conditions optimales.',
+    archived: false,
   },
   {
     id: 'carabiner-set-1',
     name: 'Dégaines Black Diamond',
+    type: EquipmentType.QUICKDRAW,
+    serialNumber: 'BD-2023-123',
     photoUrl: 'https://placehold.co/600x400.png',
     photoAiHint: 'climbing quickdraws',
     purchaseDate: new Date('2023-01-20'),
-    lifespanYears: 10,
+    serviceStartDate: new Date('2023-02-01'),
+    expectedEndOfLife: new Date('2033-01-20'),
     description: 'Jeu de 12 dégaines. Aucune chute majeure.',
     manufacturerData: 'Black Diamond recommande de mettre au rebut les mousquetons après 10 ans, ou immédiatement s\'ils ont subi une chute importante ou présentent des gorges profondes.',
+    archived: true,
   },
 ];
 
@@ -100,7 +113,7 @@ export function Dashboard() {
 
   const handleSaveEquipment = (item: Omit<Equipment, 'id'>, id?: string) => {
     if (id) {
-      setEquipment(prev => prev.map(e => e.id === id ? { ...e, ...item, id } : e));
+      setEquipment(prev => prev.map(e => e.id === id ? { ...item, id } : e));
     } else {
       const newEquipment = { ...item, id: `equip-${Date.now()}` };
       setEquipment(prev => [newEquipment, ...prev]);

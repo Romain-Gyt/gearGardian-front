@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
@@ -10,11 +10,19 @@ import { CalendarIcon, Loader2 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import type { Equipment } from '@/lib/types';
+import { EquipmentType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Sheet,
   SheetContent,
@@ -23,6 +31,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 
 interface EquipmentSheetProps {
@@ -34,11 +43,15 @@ interface EquipmentSheetProps {
 
 const equipmentFormSchema = z.object({
   name: z.string().min(3, { message: 'Le nom doit comporter au moins 3 caractères.' }),
+  type: z.nativeEnum(EquipmentType, { required_error: "Le type d'équipement est requis." }),
+  serialNumber: z.string().optional(),
   purchaseDate: z.date({ required_error: "La date d'achat est requise." }),
-  lifespanYears: z.coerce.number().min(1, "La durée de vie doit être d'au moins 1 an.").max(50, 'La durée de vie ne peut pas dépasser 50 ans.'),
+  serviceStartDate: z.date({ required_error: 'La date de mise en service est requise.' }),
+  expectedEndOfLife: z.date({ required_error: 'La date de fin de vie est requise.' }),
   description: z.string().min(10, { message: 'La description doit comporter au moins 10 caractères.' }),
   manufacturerData: z.string().optional(),
   photo: z.any().optional(),
+  archived: z.boolean().default(false),
 });
 
 type EquipmentFormValues = z.infer<typeof equipmentFormSchema>;
@@ -62,12 +75,16 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData }: Eq
     resolver: zodResolver(validationSchema),
     defaultValues: {
       name: '',
+      type: EquipmentType.OTHER,
+      serialNumber: '',
       purchaseDate: new Date(),
-      lifespanYears: 10,
+      serviceStartDate: new Date(),
+      expectedEndOfLife: new Date(new Date().setFullYear(new Date().getFullYear() + 10)),
       description: '',
       manufacturerData: '',
       photo: undefined,
-    }
+      archived: false,
+    },
   });
 
   React.useEffect(() => {
@@ -75,20 +92,28 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData }: Eq
       if (initialData) {
         form.reset({
           name: initialData.name,
+          type: initialData.type,
+          serialNumber: initialData.serialNumber || '',
           purchaseDate: new Date(initialData.purchaseDate),
-          lifespanYears: initialData.lifespanYears,
+          serviceStartDate: new Date(initialData.serviceStartDate),
+          expectedEndOfLife: new Date(initialData.expectedEndOfLife),
           description: initialData.description,
           manufacturerData: initialData.manufacturerData,
           photo: undefined,
+          archived: initialData.archived,
         });
       } else {
         form.reset({
           name: '',
+          type: EquipmentType.OTHER,
+          serialNumber: '',
           purchaseDate: new Date(),
-          lifespanYears: 10,
+          serviceStartDate: new Date(),
+          expectedEndOfLife: new Date(new Date().setFullYear(new Date().getFullYear() + 10)),
           description: '',
           manufacturerData: '',
           photo: undefined,
+          archived: false,
         });
       }
     }
@@ -101,7 +126,7 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData }: Eq
         if (event.target?.result) {
           resolve(event.target.result as string);
         } else {
-          reject(new Error("Échec de la lecture du fichier."));
+          reject(new Error('Échec de la lecture du fichier.'));
         }
       };
       reader.onerror = (error) => reject(error);
@@ -119,31 +144,65 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData }: Eq
       try {
         photoUrl = await fileToDataUri(photoFile);
       } catch (error) {
-        console.error("Erreur lors de la conversion du fichier:", error);
+        console.error('Erreur lors de la conversion du fichier:', error);
         setIsSaving(false);
         return;
       }
     }
-    
+
     const newEquipment: Omit<Equipment, 'id'> = {
       name: data.name,
+      type: data.type,
+      serialNumber: data.serialNumber,
       purchaseDate: data.purchaseDate,
-      lifespanYears: data.lifespanYears,
+      serviceStartDate: data.serviceStartDate,
+      expectedEndOfLife: data.expectedEndOfLife,
       description: data.description,
       manufacturerData: data.manufacturerData || '',
       photoUrl: photoUrl,
       photoAiHint: photoAiHint,
+      archived: data.archived,
     };
     onSave(newEquipment, initialData?.id);
     setIsSaving(false);
   };
+
+  const DatePicker = ({ name, label }: { name: keyof EquipmentFormValues; label: string }) => (
+    <div className="grid gap-2">
+      <Label>{label}</Label>
+      <Controller
+        control={form.control}
+        name={name as 'purchaseDate'}
+        render={({ field }) => (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant={'outline'} className={cn('justify-start text-left font-normal', !field.value && 'text-muted-foreground')}>
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {field.value ? format(field.value, 'PPP', { locale: fr }) : <span>Choisir une date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                locale={fr}
+                mode="single"
+                selected={field.value as Date}
+                onSelect={(date) => field.onChange(date)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        )}
+      />
+      {form.formState.errors[name] && <p className="text-sm text-destructive">{form.formState.errors[name]?.message as string}</p>}
+    </div>
+  );
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-lg w-[90vw] overflow-y-auto">
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <SheetHeader>
-            <SheetTitle className="font-headline">{isEditMode ? "Modifier l'équipement" : "Ajouter un équipement"}</SheetTitle>
+            <SheetTitle className="font-headline">{isEditMode ? "Modifier l'équipement" : 'Ajouter un équipement'}</SheetTitle>
             <SheetDescription>
               {isEditMode ? "Modifiez les détails de votre équipement." : "Remplissez les détails de votre nouvel équipement."} Cliquez sur enregistrer lorsque vous avez terminé.
             </SheetDescription>
@@ -152,70 +211,63 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData }: Eq
             <div className="grid gap-2">
               <Label htmlFor="name">Nom de l'équipement</Label>
               <Input id="name" {...form.register('name')} />
-              {form.formState.errors.name && (
-                <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
-              )}
+              {form.formState.errors.name && <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>}
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="type">Type d'équipement</Label>
+                <Controller
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner un type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.values(EquipmentType).map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {form.formState.errors.type && <p className="text-sm text-destructive">{form.formState.errors.type.message}</p>}
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="serialNumber">Numéro de série (Optionnel)</Label>
+                <Input id="serialNumber" {...form.register('serialNumber')} />
+              </div>
+            </div>
+
             <div className="grid gap-2">
-              <Label htmlFor="photo">Photo {isEditMode && '(Optionnel: laisser vide pour garder l'ancienne)'}</Label>
+              <Label htmlFor="photo">Photo {isEditMode && "(Optionnel: laisser vide pour garder l'ancienne)"}</Label>
               <Input id="photo" type="file" accept="image/*" {...form.register('photo')} />
-              {form.formState.errors.photo && (
-                <p className="text-sm text-destructive">{form.formState.errors.photo.message as string}</p>
-              )}
+              {form.formState.errors.photo && <p className="text-sm text-destructive">{form.formState.errors.photo.message as string}</p>}
             </div>
-             <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                    <Label>Date d'achat</Label>
-                     <Popover>
-                        <PopoverTrigger asChild>
-                        <Button
-                            variant={'outline'}
-                            className={cn(
-                            'justify-start text-left font-normal',
-                            !form.watch('purchaseDate') && 'text-muted-foreground'
-                            )}
-                        >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {form.watch('purchaseDate') ? format(form.watch('purchaseDate'), 'PPP', { locale: fr }) : <span>Choisir une date</span>}
-                        </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                        <Calendar
-                            locale={fr}
-                            mode="single"
-                            selected={form.watch('purchaseDate')}
-                            onSelect={(date) => form.setValue('purchaseDate', date as Date, { shouldValidate: true })}
-                            initialFocus
-                            disabled={(date) => date > new Date() || date < new Date('1990-01-01')}
-                        />
-                        </PopoverContent>
-                    </Popover>
-                    {form.formState.errors.purchaseDate && (
-                        <p className="text-sm text-destructive">{form.formState.errors.purchaseDate.message}</p>
-                    )}
-                </div>
-                <div className="grid gap-2">
-                    <Label htmlFor="lifespanYears">Durée de vie (ans)</Label>
-                    <Input id="lifespanYears" type="number" {...form.register('lifespanYears')} />
-                    {form.formState.errors.lifespanYears && (
-                        <p className="text-sm text-destructive">{form.formState.errors.lifespanYears.message}</p>
-                    )}
-                </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <DatePicker name="purchaseDate" label="Date d'achat" />
+              <DatePicker name="serviceStartDate" label="Date de mise en service" />
             </div>
+             <DatePicker name="expectedEndOfLife" label="Date de fin de vie prévue" />
+
             <div className="grid gap-2">
-              <Label htmlFor="description">Description et historique d'utilisation</Label>
+              <Label htmlFor="description">Commentaires (description, usure, etc.)</Label>
               <Textarea id="description" {...form.register('description')} />
-               {form.formState.errors.description && (
-                <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>
-              )}
+              {form.formState.errors.description && <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="manufacturerData">Données fabricant (Optionnel)</Label>
-              <Textarea
-                id="manufacturerData"
-                placeholder="ex: marque, modèle, recommendations de mise au rebut..."
-                {...form.register('manufacturerData')}
-              />
+              <Textarea id="manufacturerData" placeholder="ex: marque, modèle, recommandations..." {...form.register('manufacturerData')} />
+            </div>
+
+            <div className="flex items-center space-x-2 pt-2">
+              <Controller control={form.control} name="archived" render={({ field }) => <Switch id="archived" checked={field.value} onCheckedChange={field.onChange} />} />
+              <Label htmlFor="archived">Archiver cet équipement (ne sera plus actif)</Label>
             </div>
           </div>
           <SheetFooter>

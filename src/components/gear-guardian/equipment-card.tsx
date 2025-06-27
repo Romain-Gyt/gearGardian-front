@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import type { Equipment } from '@/lib/types';
-import { CalendarDays, ShieldCheck, ShieldAlert, ShieldQuestion, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { CalendarDays, ShieldCheck, ShieldAlert, ShieldQuestion, MoreHorizontal, Pencil, Trash2, Archive } from 'lucide-react';
 import {
     Tooltip,
     TooltipContent,
@@ -24,15 +24,26 @@ interface EquipmentCardProps {
 }
 
 export function EquipmentCard({ equipment, viewMode, onEdit, onDelete }: EquipmentCardProps) {
-  const { purchaseDate, lifespanYears } = equipment;
-  const purchaseTime = new Date(purchaseDate).getTime();
-  const lifespanMillis = lifespanYears * 365.25 * 24 * 60 * 60 * 1000;
-  const expirationDate = new Date(purchaseTime + lifespanMillis);
-  const timeElapsed = Date.now() - purchaseTime;
-  const percentageUsed = Math.min(100, (timeElapsed / lifespanMillis) * 100);
+  const { serviceStartDate, expectedEndOfLife, archived, purchaseDate } = equipment;
+  
+  const now = Date.now();
+  const startTime = new Date(serviceStartDate).getTime();
+  const endTime = new Date(expectedEndOfLife).getTime();
+  const isExpired = now > endTime;
+  const totalLifespan = endTime - startTime;
+  const timeElapsed = now - startTime;
+  const percentageUsed = totalLifespan > 0 ? Math.min(100, (timeElapsed / totalLifespan) * 100) : 0;
 
   const getStatus = () => {
-    if (percentageUsed >= 100) {
+    if (archived) {
+      return {
+        text: 'Archivé',
+        variant: 'outline',
+        Icon: Archive,
+        progressClass: 'bg-gray-400',
+      } as const;
+    }
+    if (isExpired) {
       return {
         text: 'Expiré',
         variant: 'destructive',
@@ -57,8 +68,8 @@ export function EquipmentCard({ equipment, viewMode, onEdit, onDelete }: Equipme
   };
 
   const status = getStatus();
-  const expirationDateString = expirationDate.toLocaleDateString('fr-FR');
-  const purchaseDateString = new Date(equipment.purchaseDate).toLocaleDateString('fr-FR');
+  const expirationDateString = new Date(expectedEndOfLife).toLocaleDateString('fr-FR');
+  const purchaseDateString = new Date(purchaseDate).toLocaleDateString('fr-FR');
 
   const CardActions = () => (
     <div className="absolute top-2 right-2">
@@ -96,7 +107,7 @@ export function EquipmentCard({ equipment, viewMode, onEdit, onDelete }: Equipme
         <div className="flex-1 grid grid-cols-5 items-center gap-4">
             <div className="col-span-2">
                 <h3 className="font-semibold font-headline">{equipment.name}</h3>
-                <p className="text-sm text-muted-foreground line-clamp-2">{equipment.description}</p>
+                <p className="text-xs text-muted-foreground">{equipment.type} {equipment.serialNumber && `- ${equipment.serialNumber}`}</p>
             </div>
             <div>
                 <Badge variant={status.variant} className="gap-1.5">
@@ -153,7 +164,7 @@ export function EquipmentCard({ equipment, viewMode, onEdit, onDelete }: Equipme
                         </Badge>
                     </TooltipTrigger>
                     <TooltipContent>
-                       {`Statut de durée de vie: ${status.text}`}
+                       {`Statut: ${status.text}`}
                     </TooltipContent>
                 </Tooltip>
             </TooltipProvider>
@@ -161,22 +172,26 @@ export function EquipmentCard({ equipment, viewMode, onEdit, onDelete }: Equipme
         </div>
         <div className="p-6 pb-2">
             <CardTitle className="font-headline text-xl leading-tight">{equipment.name}</CardTitle>
-            <CardDescription className="flex items-center gap-1.5 pt-2">
-                <CalendarDays className="size-3.5" />
-                Acheté le : {purchaseDateString}
+            <CardDescription className="flex items-center gap-1.5 pt-2 text-xs">
+                {equipment.type} {equipment.serialNumber && ` / ${equipment.serialNumber}`}
             </CardDescription>
         </div>
       </CardHeader>
       <CardContent className="flex-grow p-6 pt-0">
-        <div className="text-sm text-muted-foreground">{equipment.description}</div>
+         <CardDescription className="flex items-center gap-1.5">
+            <CalendarDays className="size-3.5" />
+            Acheté le : {purchaseDateString}
+        </CardDescription>
       </CardContent>
       <CardFooter className="flex flex-col items-start gap-4 p-6 pt-0 mt-auto">
-        <div>
-          <span className="text-xs font-medium text-muted-foreground">
-            Durée de vie (Expire le {expirationDateString})
-          </span>
-          <Progress value={percentageUsed} className="mt-1 h-2" indicatorClassName={status.progressClass} />
-        </div>
+        {!archived && (
+            <div>
+            <span className="text-xs font-medium text-muted-foreground">
+                Durée de vie (Expire le {expirationDateString})
+            </span>
+            <Progress value={percentageUsed} className="mt-1 h-2" indicatorClassName={status.progressClass} />
+            </div>
+        )}
       </CardFooter>
     </Card>
   );
