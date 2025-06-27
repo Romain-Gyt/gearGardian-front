@@ -39,7 +39,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { useToast } from '@/hooks/use-toast';
 import { EquipmentCard } from './equipment-card';
 import { EquipmentSheet } from './add-equipment-sheet';
 import { Tutorials } from './tutorials';
@@ -50,7 +49,7 @@ import { EquipmentType } from '@/lib/types';
 import { ModeToggle } from '../mode-toggle';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '../ui/button';
-import { analyzeGearHealth, type GearHealthOutput } from '@/ai/flows/gear-health-analyzer';
+import { ExpirationBanner } from './expiration-banner';
 
 
 const initialEquipment: Equipment[] = [
@@ -102,7 +101,6 @@ type View = 'equipment' | 'tutorials';
 
 export function Dashboard() {
   const router = useRouter();
-  const { toast } = useToast();
   const [equipment, setEquipment] = React.useState<Equipment[]>(initialEquipment);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [editingEquipment, setEditingEquipment] = React.useState<Equipment | null>(null);
@@ -112,8 +110,7 @@ export function Dashboard() {
   const [itemToDelete, setItemToDelete] = React.useState<string | null>(null);
 
   const [isHealthDialogOpen, setIsHealthDialogOpen] = React.useState(false);
-  const [healthAnalysis, setHealthAnalysis] = React.useState<GearHealthOutput | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = React.useState(false);
+  const [itemToAnalyze, setItemToAnalyze] = React.useState<Equipment | null>(null);
 
   const handleSaveEquipment = (item: Omit<Equipment, 'id'>, id?: string) => {
     if (id) {
@@ -149,29 +146,9 @@ export function Dashboard() {
     }
   };
 
-  const handleAnalyzeRequest = async (item: Equipment) => {
-    setHealthAnalysis(null);
-    setIsAnalyzing(true);
+  const handleAnalyzeRequest = (item: Equipment) => {
+    setItemToAnalyze(item);
     setIsHealthDialogOpen(true);
-
-    try {
-      const result = await analyzeGearHealth({
-        photoDataUri: item.photoUrl,
-        description: item.description,
-        manufacturerData: item.manufacturerData,
-      });
-      setHealthAnalysis(result);
-    } catch (error) {
-        console.error("Erreur lors de l'analyse IA:", error);
-        toast({
-            variant: "destructive",
-            title: "Erreur d'analyse",
-            description: "L'analyse par IA a échoué. Veuillez réessayer.",
-        });
-        setIsHealthDialogOpen(false);
-    } finally {
-        setIsAnalyzing(false);
-    }
   };
   
   const NavLink = ({ view, label, icon: Icon }: { view: View, label: string, icon: React.ElementType }) => (
@@ -286,6 +263,7 @@ export function Dashboard() {
           </DropdownMenu>
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+          <ExpirationBanner equipment={equipment} />
           {activeView === 'equipment' ? (
             <>
               <div className="flex items-center justify-between">
@@ -358,9 +336,13 @@ export function Dashboard() {
       </AlertDialog>
       <GearHealthDialog
         isOpen={isHealthDialogOpen}
-        onOpenChange={setIsHealthDialogOpen}
-        analysis={healthAnalysis}
-        isLoading={isAnalyzing}
+        onOpenChange={(open) => {
+            setIsHealthDialogOpen(open);
+            if (!open) {
+                setItemToAnalyze(null);
+            }
+        }}
+        equipment={itemToAnalyze}
       />
     </div>
   );

@@ -181,7 +181,7 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData }: Eq
                 {field.value ? format(field.value, 'PPP', { locale: fr }) : <span>Choisir une date</span>}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
+            <PopoverContent className="w-auto p-0 z-[60]">
               <Calendar
                 locale={fr}
                 mode="single"
