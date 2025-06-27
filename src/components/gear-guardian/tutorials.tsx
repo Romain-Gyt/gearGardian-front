@@ -52,6 +52,29 @@ export function Tutorials() {
                                 </ul>
                             </AccordionContent>
                         </AccordionItem>
+                        <AccordionItem value="item-4">
+                            <AccordionTrigger>Comment inspecter votre casque d'escalade ?</AccordionTrigger>
+                            <AccordionContent>
+                                <p className="mb-2">Le casque protège votre tête des chutes de pierres et des impacts. Son inspection est vitale.</p>
+                                <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                                    <li><strong>Coque externe :</strong> Recherchez des fissures, même fines, des bosses, des déformations ou une décoloration excessive due au soleil (fragilisation du plastique).</li>
+                                    <li><strong>Coque interne (mousse) :</strong> Inspectez la mousse d'absorption des chocs pour des signes de compression, des fissures ou des morceaux manquants.</li>
+                                    <li><strong>Sangles et boucle :</strong> Vérifiez l'état des sangles (pas d'effilochage, de coupures) et le bon fonctionnement de la boucle de fermeture.</li>
+                                    <li><strong>Après un choc :</strong> Tout comme pour les autres EPI, un casque doit être mis au rebut après un impact important, même si aucun dommage n'est visible.</li>
+                                </ul>
+                            </AccordionContent>
+                        </AccordionItem>
+                        <AccordionItem value="item-5">
+                            <AccordionTrigger>Vérification de votre système d'assurage</AccordionTrigger>
+                            <AccordionContent>
+                                <p className="mb-2">Qu'il soit simple ou mécanique, votre assureur est une pièce maîtresse de la chaîne de sécurité.</p>
+                                <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                                    <li><strong>Usure générale :</strong> Recherchez une usure excessive aux points de friction de la corde. Des gorges trop profondes peuvent créer des arêtes vives et endommager la corde.</li>
+                                    <li><strong>Parties mobiles (pour les assureurs mécaniques) :</strong> Assurez-vous que la came ou les autres pièces mobiles fonctionnent sans a-coups, qu'elles ne sont pas encrassées et qu'elles reviennent bien en position.</li>
+                                    <li><strong>Fissures et déformations :</strong> Examinez l'ensemble de l'appareil pour déceler toute fissure, déformation ou signe de corrosion.</li>
+                                </ul>
+                            </AccordionContent>
+                        </AccordionItem>
                     </Accordion>
                 </CardContent>
             </Card>
