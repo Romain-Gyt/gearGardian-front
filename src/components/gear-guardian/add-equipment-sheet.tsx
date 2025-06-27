@@ -167,12 +167,12 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData }: Eq
     setIsSaving(false);
   };
 
-  const DatePicker = ({ name, label }: { name: keyof EquipmentFormValues; label: string }) => (
+  const DatePicker = ({ name, label }: { name: 'purchaseDate' | 'serviceStartDate' | 'expectedEndOfLife'; label: string }) => (
     <div className="grid gap-2">
       <Label>{label}</Label>
       <Controller
         control={form.control}
-        name={name as 'purchaseDate'}
+        name={name}
         render={({ field }) => (
           <Popover>
             <PopoverTrigger asChild>

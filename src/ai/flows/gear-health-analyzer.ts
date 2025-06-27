@@ -39,6 +39,7 @@ const prompt = ai.definePrompt({
   output: {schema: GearHealthOutputSchema},
   prompt: `Vous êtes un expert en sécurité des Équipements de Protection Individuelle (EPI) pour l'escalade, certifié par les plus grandes marques comme Petzl et Black Diamond.
 Votre mission est d'analyser l'état d'un équipement d'escalade à partir d'une photo et d'une description.
+Toutes vos réponses doivent être exclusivement en français.
 
 Analysez l'image et les textes fournis pour évaluer l'état de l'équipement. Soyez très prudent et privilégiez toujours la sécurité.
 
