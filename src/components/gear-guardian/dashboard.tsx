@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import {
   ShieldCheck,
   PlusCircle,
@@ -103,6 +104,7 @@ const initialEquipment: Equipment[] = [
 type View = 'equipment' | 'tutorials';
 
 export function Dashboard() {
+  const router = useRouter();
   const [equipment, setEquipment] = React.useState<Equipment[]>(initialEquipment);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [editingEquipment, setEditingEquipment] = React.useState<Equipment | null>(null);
@@ -184,7 +186,7 @@ export function Dashboard() {
       <aside className="hidden border-r bg-muted/40 md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <a href="/" className="flex items-center gap-2 font-semibold">
+            <a href="/dashboard" className="flex items-center gap-2 font-semibold">
               <Logo className="size-6" />
               <span className="font-headline text-lg">GearGuardian</span>
             </a>
@@ -209,7 +211,7 @@ export function Dashboard() {
             <SheetContent side="left" className="flex flex-col">
               <nav className="grid gap-2 text-lg font-medium">
                 <a
-                  href="#"
+                  href="/dashboard"
                   className="flex items-center gap-2 text-lg font-semibold mb-4"
                 >
                   <Logo className="h-6 w-6" />
@@ -249,10 +251,10 @@ export function Dashboard() {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Mon Compte</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Profil</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/profile')}>Profil</DropdownMenuItem>
               <DropdownMenuItem>Support</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Déconnexion</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/')}>Déconnexion</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>

@@ -6,11 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/gear-guardian/logo';
 import { redirect } from 'next/navigation';
 
-export default function LoginPage() {
+export default function SignupPage() {
 
-  const handleLogin = async (formData: FormData) => {
+  const handleSignup = async (formData: FormData) => {
     'use server';
-    // La logique d'authentification réelle se trouverait ici.
+    // La logique de création d'utilisateur réelle se trouverait ici.
     // Pour l'instant, nous redirigeons simplement vers le tableau de bord.
     redirect('/dashboard');
   }
@@ -23,34 +23,33 @@ export default function LoginPage() {
                 <Logo className="size-8" />
                 <h1 className="text-2xl font-headline">GearGuardian</h1>
             </div>
-          <CardTitle className="text-2xl">Connexion</CardTitle>
-          <CardDescription>Entrez votre email ci-dessous pour vous connecter à votre compte.</CardDescription>
+          <CardTitle className="text-2xl">Inscription</CardTitle>
+          <CardDescription>Créez un compte pour commencer à gérer votre équipement.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={handleLogin}>
+          <form action={handleSignup}>
             <div className="grid gap-4">
-              <div className="grid gap-2">
+                <div className="grid gap-2">
+                <Label htmlFor="name">Nom</Label>
+                <Input id="name" name="name" placeholder="Prénom Nom" required />
+                </div>
+                <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" name="email" type="email" placeholder="nom@exemple.com" required />
-              </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Mot de passe</Label>
-                  <Link href="#" className="ml-auto inline-block text-sm underline">
-                    Mot de passe oublié?
-                  </Link>
                 </div>
+                <div className="grid gap-2">
+                <Label htmlFor="password">Mot de passe</Label>
                 <Input id="password" name="password" type="password" required />
-              </div>
-              <Button type="submit" className="w-full">
-                Se connecter
-              </Button>
+                </div>
+                <Button type="submit" className="w-full">
+                Créer un compte
+                </Button>
             </div>
           </form>
           <div className="mt-4 text-center text-sm">
-            Vous n'avez pas de compte?{' '}
-            <Link href="/signup" className="underline">
-              S'inscrire
+            Vous avez déjà un compte?{' '}
+            <Link href="/" className="underline">
+              Se connecter
             </Link>
           </div>
         </CardContent>
