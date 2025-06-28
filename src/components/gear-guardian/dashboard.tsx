@@ -82,7 +82,7 @@ export function Dashboard() {
   React.useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) {
-      router.push('/');
+      router.push('/login');
       return;
     }
     getProfile()
@@ -192,7 +192,7 @@ export function Dashboard() {
   const handleLogout = async () => {
     try {
       logout();
-      router.push('/');
+      router.push('/login');
     } catch (error) {
       console.error('Logout failed', error);
       toast({
