@@ -1,6 +1,5 @@
-import { redirect } from 'next/navigation';
+import { Login } from '@/components/gear-guardian/login';
 
 export default function HomePage() {
-  // Redirection temporaire vers le tableau de bord
-  redirect('/dashboard');
+  return <Login />;
 }

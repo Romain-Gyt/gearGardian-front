@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { signup } from '@/lib/api';
+import { signup } from '@/lib/api/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -43,15 +43,23 @@ export function Signup() {
       router.push('/dashboard');
     } catch (error: any) {
       console.error(error);
+      const data = error.response?.data;
       let description = "Une erreur est survenue. Veuillez réessayer.";
-      if (error.response?.status === 409) {
-        description = "Cette adresse e-mail est déjà utilisée.";
+      if (data?.error) {
+        // Cas : BusinessException ou ConstraintViolationException
+        description = data.error;
+      } else if (data && typeof data === 'object') {
+        // Cas : validation multiple
+        const messages = Object.values(data);
+        description = messages.join(', ');
       }
+
       toast({
         variant: 'destructive',
         title: "Erreur d'inscription",
         description,
       });
+
       setIsLoading(false);
     }
   };
@@ -71,8 +79,8 @@ export function Signup() {
           <form onSubmit={handleSignup}>
             <div className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="name">Nom</Label>
-                <Input id="name" name="name" placeholder="Prénom Nom" required />
+                <Label htmlFor="name">Nom d'utilisateur</Label>
+                <Input id="name" name="name" placeholder="nom d'utilisateur" required />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>

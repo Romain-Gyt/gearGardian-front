@@ -50,7 +50,7 @@ import { ModeToggle } from '../mode-toggle';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '../ui/button';
 import { ExpirationBanner } from './expiration-banner';
-import { getEquipmentList, saveEquipment, deleteEquipment, logout, getProfile } from '@/lib/api';
+import { getEquipmentList, saveEquipment, deleteEquipment, logout, getProfile } from '@/lib/api/';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 
@@ -80,38 +80,38 @@ export function Dashboard() {
   const [itemToAnalyze, setItemToAnalyze] = React.useState<Equipment | null>(null);
 
   React.useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    if (!token) {
-      router.push('/login');
-      return;
-    }
-    getProfile()
-      .then((profile) => {
-        if (profile.alertThreshold !== undefined) {
-          setAlertThreshold(profile.alertThreshold);
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to fetch profile', err);
-      })
-      .finally(() => setIsLoadingUser(false));
+    // getProfile()
+    //     .then((profile) => {
+    //       if (profile.alertThreshold !== undefined) {
+    //         setAlertThreshold(profile.alertThreshold);
+    //       }
+    //     })
+    //     .catch((err) => {
+    //       console.error('Failed to fetch profile', err);
+    //       router.push('/login');
+    //     })
+    //     .finally(() => setIsLoadingUser(false));
+    setIsLoadingUser(false);
   }, [router]);
 
+
   const fetchEquipment = React.useCallback(async () => {
-    try {
-      setIsLoadingData(true);
-      const list = await getEquipmentList();
-      setEquipment(list);
-    } catch (error) {
-      console.error("Failed to fetch equipment:", error);
-      toast({
-        variant: 'destructive',
-        title: 'Erreur de chargement',
-        description: "Impossible de récupérer les équipements depuis la base de données.",
-      });
-    } finally {
-      setIsLoadingData(false);
-    }
+    // try {
+    //   setIsLoadingData(true);
+    //   const list = await getEquipmentList();
+    //   setEquipment(list);
+    // } catch (error) {
+    //   console.error("Failed to fetch equipment:", error);
+    //   toast({
+    //     variant: 'destructive',
+    //     title: 'Erreur de chargement',
+    //     description: "Impossible de récupérer les équipements depuis la base de données.",
+    //   });
+    // } finally {
+    //   setIsLoadingData(false);
+    // }
+    setEquipment([]);
+    setIsLoadingData(false);
   }, [toast]);
 
   React.useEffect(() => {

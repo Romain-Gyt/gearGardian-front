@@ -1,23 +1,18 @@
 import { api } from './client';
 
+// Connexion : envoie les identifiants, reçoit le cookie JWT via Set-Cookie
 export async function login(email: string, password: string) {
   const { data } = await api.post('/auth/login', { email, password });
-  if (typeof window !== 'undefined' && data.token) {
-    localStorage.setItem('token', data.token);
-  }
   return data;
 }
 
-export async function signup(name: string, email: string, password: string) {
-  const { data } = await api.post('/auth/signup', { name, email, password });
-  if (typeof window !== 'undefined' && data.token) {
-    localStorage.setItem('token', data.token);
-  }
+// Inscription : envoie les infos, reçoit aussi un cookie JWT
+export async function signup(username: string, email: string, password: string) {
+  const { data } = await api.post('/auth/register', { username, email, password });
   return data;
 }
 
-export function logout() {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('token');
-  }
+// Déconnexion : supprime le cookie côté backend
+export async function logout() {
+  await api.post('/auth/logout');
 }
