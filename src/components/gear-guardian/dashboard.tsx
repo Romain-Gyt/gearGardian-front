@@ -94,25 +94,23 @@ export function Dashboard() {
     setIsLoadingUser(false);
   }, [router]);
 
-
   const fetchEquipment = React.useCallback(async () => {
-    // try {
-    //   setIsLoadingData(true);
-    //   const list = await getEquipmentList();
-    //   setEquipment(list);
-    // } catch (error) {
-    //   console.error("Failed to fetch equipment:", error);
-    //   toast({
-    //     variant: 'destructive',
-    //     title: 'Erreur de chargement',
-    //     description: "Impossible de récupérer les équipements depuis la base de données.",
-    //   });
-    // } finally {
-    //   setIsLoadingData(false);
-    // }
-    setEquipment([]);
-    setIsLoadingData(false);
+    setIsLoadingData(true);
+    try {
+      const list = await getEquipmentList();
+      setEquipment(list);
+    } catch (error) {
+      console.error("Failed to fetch equipment:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Erreur de chargement',
+        description: "Impossible de récupérer les équipements depuis la base de données.",
+      });
+    } finally {
+      setIsLoadingData(false);
+    }
   }, [toast]);
+
 
   React.useEffect(() => {
     fetchEquipment();

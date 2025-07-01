@@ -1,12 +1,25 @@
 export enum EquipmentType {
-  HELMET = 'Casque',
-  ROPE = 'Corde',
-  HARNESS = 'Baudrier',
-  QUICKDRAW = 'Dégaine',
-  CARABINER = 'Mousqueton',
-  BELAY_DEVICE = "Système d'assurage",
-  OTHER = 'Autre',
+  HELMET = 'HELMET',
+  ROPE = 'ROPE',
+  HARNESS = 'HARNESS',
+  SLING = 'SLING',
+  CARABINER = 'CARABINER',
+  DESCENDER = 'DESCENDER',
+  QUICKDRAW = "QUICKDRAW",
+  OTHER = 'OTHER',
 }
+
+// Mapping « constante → libellé français »
+export const EquipmentTypeLabels: Record<EquipmentType, string> = {
+  [EquipmentType.HELMET]: 'Casque',
+  [EquipmentType.ROPE]: 'Corde',
+  [EquipmentType.HARNESS]: 'Baudrier',
+  [EquipmentType.SLING]: 'Sangle',
+  [EquipmentType.CARABINER]: 'Mousqueton',
+  [EquipmentType.DESCENDER]: 'Descendeur',
+  [EquipmentType.QUICKDRAW]: 'Degaine',
+  [EquipmentType.OTHER]: 'Autre',
+};
 
 export enum EquipmentStatus {
   GOOD = 'GOOD',
@@ -17,20 +30,27 @@ export enum EquipmentStatus {
 
 export interface Equipment {
   id: string;
-  userId: string;
+  name: string;
+  // …
+  status: EquipmentStatus;
+  percentageUsed: number;
+}
+
+export interface Equipment {
+  id: string;
   name: string;
   type: EquipmentType;
   serialNumber?: string;
-  photoUrl: string;
-  photoAiHint: string;
-  purchaseDate: Date;
-  serviceStartDate: Date;
-  expectedEndOfLife: Date;
+  purchaseDate: Date;        // ISO date
+  serviceStartDate: Date;    // ISO date
+  expectedEndOfLife: Date;   // ISO date
   description: string;
-  manufacturerData: string;
+  manufacturerData?: string;
+  photoUrl: string;
+  photoAiHint?: string;
   archived: boolean;
-  percentageUsed: number;
-  status: EquipmentStatus;
+  // ISO date
+  // status, percentageUsed si nécessaire
 }
 
 export interface UserProfile {

@@ -1,47 +1,46 @@
 'use client';
 
 import * as React from 'react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import type { Equipment, EquipmentStatus } from '@/lib/types';
-import { X } from 'lucide-react';
+import type { Equipment } from '@/lib/types';
 
 interface ExpirationBannerProps {
-  equipment: Equipment[];
-  /** Alert threshold percentage from user profile */
-  threshold?: number;
+    equipment: Equipment[];
+    threshold: number; // en pourcentage, ex. 80
 }
 
-export function ExpirationBanner({ equipment, threshold = 80 }: ExpirationBannerProps) {
-  const [isDismissed, setIsDismissed] = React.useState(false);
+export function ExpirationBanner({ equipment, threshold }: ExpirationBannerProps) {
+    const expiringSoon = React.useMemo(() => {
+        const now = Date.now();
 
-  const expiringSoon = React.useMemo(() => {
-    return equipment.filter(item => {
-      if (item.archived) return false;
-      if (item.status === EquipmentStatus.EXPIRED) return false;
-      return item.percentageUsed >= threshold;
-    });
-  }, [equipment, threshold]);
+        return equipment.filter((item) => {
+            const start = new Date(item.serviceStartDate).getTime();
+            const end   = new Date(item.expectedEndOfLife).getTime();
+            if (now >= end) return false;            // déjà expiré ou archivé
+            if (now < start) return false;           // pas encore en service
 
-  if (isDismissed || expiringSoon.length === 0) {
-    return null;
-  }
+            const totalLife = end - start;
+            const usedLife  = now - start;
+            const usedPct   = (usedLife / totalLife) * 100;
+            return usedPct >= threshold;             // dépasse le seuil
+        });
+    }, [equipment, threshold]);
 
-  return (
-    <Alert variant="destructive" className="relative pr-10">
-      <AlertTitle>Attention : Équipement arrivant à expiration !</AlertTitle>
-      <AlertDescription>
-        Les équipements suivants approchent de leur fin de vie : {expiringSoon.map(e => e.name).join(', ')}. Pensez à les inspecter ou à les remplacer.
-      </AlertDescription>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute top-2 right-2 h-6 w-6"
-        onClick={() => setIsDismissed(true)}
-      >
-        <X className="h-4 w-4" />
-        <span className="sr-only">Fermer</span>
-      </Button>
-    </Alert>
-  );
+    if (expiringSoon.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className="rounded-lg bg-yellow-100 p-4 text-yellow-900 flex items-center justify-between">
+            <p className="font-medium">
+                ⚠️ {expiringSoon.length} {expiringSoon.length > 1 ? 'équipements arrivent' : "équipement arrive"} bientôt en fin de vie.
+            </p>
+            <Button size="sm" variant="outline" onClick={() => {
+                // par exemple naviguer vers la liste filtrée
+                window.location.href = '/dashboard?view=expiry';
+            }}>
+                Voir
+            </Button>
+        </div>
+    );
 }

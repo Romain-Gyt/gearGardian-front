@@ -9,7 +9,7 @@ import { fr } from 'date-fns/locale';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import type { Equipment } from '@/lib/types';
+import {Equipment, EquipmentTypeLabels} from '@/lib/types';
 import { EquipmentType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -232,22 +232,22 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData, isLo
               <div className="grid gap-2">
                 <Label htmlFor="type">Type d'équipement</Label>
                 <Controller
-                  control={form.control}
-                  name="type"
-                  render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner un type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.values(EquipmentType).map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
+                    control={form.control}
+                    name="type"
+                    render={({ field }) => (
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner un type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.values(EquipmentType).map((type) => (
+                                <SelectItem key={type} value={type}>
+                                  {EquipmentTypeLabels[type]}
+                                </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                    )}
                 />
                 {form.formState.errors.type && <p className="text-sm text-destructive">{form.formState.errors.type.message}</p>}
               </div>

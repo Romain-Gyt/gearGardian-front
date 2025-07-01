@@ -2,10 +2,10 @@
 
 import * as React from 'react';
 import Image from 'next/image';
+import { Equipment, EquipmentStatus } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import type { Equipment, EquipmentStatus } from '@/lib/types';
 import { CalendarDays, ShieldCheck, ShieldAlert, ShieldQuestion, MoreHorizontal, Pencil, Trash2, Archive, BrainCircuit } from 'lucide-react';
 import {
     Tooltip,
