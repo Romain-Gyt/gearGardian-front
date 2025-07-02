@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, ShieldCheck, ShieldAlert, Upload } from 'lucide-react';
 import type { GearHealthOutput } from '@/ai/flows/gear-health-analyzer';
-import type { Equipment } from '@/lib/types';
+import type {EPI, Equipment} from '@/lib/types';
 import { analyzeGearHealth } from '@/ai/flows/gear-health-analyzer';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '../ui/input';
@@ -22,7 +22,7 @@ import Image from 'next/image';
 interface GearHealthDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  equipment: Equipment | null;
+  equipment: EPI | null;
 }
 
 export function GearHealthDialog({ isOpen, onOpenChange, equipment }: GearHealthDialogProps) {
@@ -81,12 +81,12 @@ export function GearHealthDialog({ isOpen, onOpenChange, equipment }: GearHealth
 
     try {
       const photoDataUri = await fileToDataUri(photoFile);
-      const result = await analyzeGearHealth({
-        photoDataUri,
-        description: equipment.description,
-        manufacturerData: equipment.manufacturerData,
-      });
-      setAnalysis(result);
+      // const result = await analyzeGearHealth({
+      //   photoDataUri,
+      //   description: equipment.description,
+      //   manufacturerData: equipment.manufacturerData,
+      // });
+      // setAnalysis(result);
     } catch (error) {
       console.error("AI analysis error:", error);
       toast({

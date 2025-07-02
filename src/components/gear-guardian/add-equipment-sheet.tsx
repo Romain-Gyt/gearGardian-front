@@ -9,8 +9,8 @@ import { fr } from 'date-fns/locale';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import {Equipment, EquipmentTypeLabels} from '@/lib/types';
-import { EquipmentType } from '@/lib/types';
+import {EPI, EquipmentTypeLabels} from '@/lib/types';
+import { EquipmentType, EPIRequestPayload } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
@@ -36,12 +36,12 @@ import { Textarea } from '@/components/ui/textarea';
 
 interface EquipmentSheetProps {
   onSave: (
-    equipment: Omit<Equipment, 'id' | 'userId' | 'status' | 'percentageUsed'>,
-    id?: string,
+      equipment: EPIRequestPayload,
+      id?: string,
   ) => void;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  initialData?: Equipment | null;
+  initialData?: EPI | null;
   isLoading: boolean;
 }
 
@@ -152,34 +152,20 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData, isLo
   };
 
   const onSubmit = async (data: EquipmentFormValues) => {
-    let photoUrl = initialData?.photoUrl || '';
-    const photoAiHint = initialData?.photoAiHint || 'climbing gear';
-
-    if (data.photo && data.photo.length > 0) {
-      const photoFile = data.photo[0];
-      try {
-        photoUrl = await fileToDataUri(photoFile);
-      } catch (error) {
-        console.error('Erreur lors de la conversion du fichier:', error);
-        return;
-      }
-    }
-
-    const newEquipment: Omit<Equipment, 'id' | 'userId' | 'status' | 'percentageUsed'> = {
+    const payload: EPIRequestPayload = {
       name: data.name,
       type: data.type,
       serialNumber: data.serialNumber || '',
-      purchaseDate: data.purchaseDate,
-      serviceStartDate: data.serviceStartDate,
-      expectedEndOfLife: data.expectedEndOfLife,
+      purchaseDate: data.purchaseDate.toISOString().split('T')[0],
+      serviceStartDate: data.serviceStartDate.toISOString().split('T')[0],
+      lifespanInYears: data.lifespanInYears,
       description: data.description,
       manufacturerData: data.manufacturerData || '',
-      photoUrl: photoUrl,
-      photoAiHint: photoAiHint,
       archived: data.archived,
     };
-    onSave(newEquipment, initialData?.id);
+    onSave(payload, initialData?.id);
   };
+
 
   const DatePicker = ({ name, label }: { name: 'purchaseDate' | 'serviceStartDate'; label: string }) => (
     <div className="grid gap-2">
