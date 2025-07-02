@@ -2,10 +2,10 @@
 
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
-import type { Equipment } from '@/lib/types';
+import type {EPI, Equipment} from '@/lib/types';
 
 interface ExpirationBannerProps {
-    equipment: Equipment[];
+    equipment: EPI[];
     threshold: number; // en pourcentage, ex. 80
 }
 

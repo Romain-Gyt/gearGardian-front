@@ -1,22 +1,25 @@
 // api.ts (client)
 import { api } from './client';
-import type { Equipment } from '@/lib/types';
+import type { EPIRequestPayload, EPI} from '@/lib/types';
+
 
 // Récupère la liste des équipements de l'utilisateur authentifié
 export async function getEquipmentList() {
-  const { data } = await api.get<Equipment[]>('/epi/me');
+  const { data } = await api.get<EPI[]>('/epi/me');
   return data;
 }
 
 // Crée ou met à jour un équipement
 export async function saveEquipment(
-    equipment: Omit<Equipment, 'id' | 'userId' | 'status' | 'percentageUsed'>,
+    equipment: EPIRequestPayload,  // on envoie exactement le payload attendu
     id?: string,
 ) {
   if (id) {
+    // PUT /epi/{id}
     await api.put(`/epi/${id}`, equipment);
   } else {
-    await api.post('/epi/add', equipment);
+    // POST /epi
+    await api.post('/epi', equipment);
   }
 }
 
