@@ -48,7 +48,7 @@ interface EquipmentSheetProps {
 const equipmentFormSchema = z.object({
   name: z.string().min(3, { message: 'Le nom doit comporter au moins 3 caractères.' }),
   type: z.nativeEnum(EquipmentType, { required_error: "Le type d'équipement est requis." }),
-  serialNumber: z.string().optional(),
+  serialNumber: z.string(),
   purchaseDate: z.date({ required_error: "La date d'achat est requise." }),
   serviceStartDate: z.date({ required_error: 'La date de mise en service est requise.' }),
   lifespanInYears: z.coerce.number({invalid_type_error: 'Veuillez entrer un nombre valide.'}).int().min(1, { message: "La durée de vie doit être d'au moins 1 an." }),
@@ -155,7 +155,7 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData, isLo
     const payload: EPIRequestPayload = {
       name: data.name,
       type: data.type,
-      serialNumber: data.serialNumber || '',
+      serialNumber: data.serialNumber ,
       purchaseDate: data.purchaseDate.toISOString().split('T')[0],
       serviceStartDate: data.serviceStartDate.toISOString().split('T')[0],
       lifespanInYears: data.lifespanInYears,
@@ -238,7 +238,7 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData, isLo
                 {form.formState.errors.type && <p className="text-sm text-destructive">{form.formState.errors.type.message}</p>}
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="serialNumber">Numéro de série (Optionnel)</Label>
+                <Label htmlFor="serialNumber">Numéro de série </Label>
                 <Input id="serialNumber" {...form.register('serialNumber')} />
               </div>
             </div>
