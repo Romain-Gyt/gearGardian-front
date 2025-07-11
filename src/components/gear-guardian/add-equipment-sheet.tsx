@@ -1,5 +1,4 @@
 'use client';
-
 import * as React from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,6 +7,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 
+import {replacePhoto, uploadPhoto} from '@/lib/api/uploadPhoto';
 import { cn } from '@/lib/utils';
 import {EPI, EquipmentTypeLabels} from '@/lib/types';
 import { EquipmentType, EPIRequestPayload } from '@/lib/types';
@@ -33,16 +33,18 @@ import {
 } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import {onRefresh} from "next/dist/client/components/react-dev-overlay/pages/client";
 
 interface EquipmentSheetProps {
   onSave: (
       equipment: EPIRequestPayload,
       id?: string,
-  ) => void;
+  ) => Promise<EPI>;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   initialData?: EPI | null;
   isLoading: boolean;
+  onRefresh?: () => void;
 }
 
 const equipmentFormSchema = z.object({
@@ -155,7 +157,7 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData, isLo
     const payload: EPIRequestPayload = {
       name: data.name,
       type: data.type,
-      serialNumber: data.serialNumber ,
+      serialNumber: data.serialNumber,
       purchaseDate: data.purchaseDate.toISOString().split('T')[0],
       serviceStartDate: data.serviceStartDate.toISOString().split('T')[0],
       lifespanInYears: data.lifespanInYears,
@@ -163,7 +165,22 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData, isLo
       manufacturerData: data.manufacturerData || '',
       archived: data.archived,
     };
-    onSave(payload, initialData?.id);
+
+    const savedEpi = await onSave(payload, initialData?.id);
+
+    if (data.photo?.[0]) {
+      const file = data.photo[0];
+      if (initialData?.photos?.[0]) {
+        // On remplace la photo existante
+        await replacePhoto(parseInt(savedEpi.id), initialData.photos[0].id, file);
+      } else {
+        // On ajoute une nouvelle photo
+        await uploadPhoto(parseInt(savedEpi.id), file);
+      }
+    }
+
+
+    onOpenChange(false); // ferme le sheet
   };
 
 

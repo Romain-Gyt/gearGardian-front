@@ -91,6 +91,7 @@ export function Dashboard() {
     setIsLoadingData(true);
     try {
       const list = await getEquipmentList();
+      console.log('Fetched equipment list:', list);
       setEquipment(list);
     } catch (err) {
       console.error('Failed to fetch equipment:', err);
@@ -108,10 +109,10 @@ export function Dashboard() {
     fetchEquipment();
   }, [fetchEquipment]);
 
-  const handleSaveEquipment = async (item: EPIRequestPayload, id?: string) => {
+  const handleSaveEquipment = async (item: EPIRequestPayload, id?: string): Promise<EPI> => {
     setIsLoadingData(true);
     try {
-      await saveEquipment(item, id);
+      const data = await saveEquipment(item, id);
       toast({
         title: 'Équipement sauvegardé',
         description: 'Modifications enregistrées.',
@@ -119,6 +120,7 @@ export function Dashboard() {
       fetchEquipment();
       setIsSheetOpen(false);
       setEditingEquipment(null);
+      return data;
     } catch (err) {
       console.error('Failed to save equipment:', err);
       toast({
@@ -126,6 +128,7 @@ export function Dashboard() {
         title: 'Erreur de sauvegarde',
         description: "L'enregistrement a échoué.",
       });
+      throw err; // ✅ force le typage Promise<EPI>
     } finally {
       setIsLoadingData(false);
     }
@@ -357,6 +360,7 @@ export function Dashboard() {
             onOpenChange={setIsSheetOpen}
             initialData={editingEquipment}
             isLoading={isLoadingData}
+            onRefresh={fetchEquipment}
         />
 
         <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>

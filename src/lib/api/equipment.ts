@@ -4,24 +4,19 @@ import type { EPIRequestPayload, EPI} from '@/lib/types';
 
 
 
-export async function getEquipmentList() {
-  const { data } = await api.get<EPI[]>('/epi/me');
-  return data;
+export async function getEquipmentList(): Promise<EPI[]> {
+  const response = await api.get('/epi/me', { withCredentials: true });
+  console.log('Fetching equipment list:', response.data);
+  return response.data;
 }
 
-
-export async function saveEquipment(
-    equipment: EPIRequestPayload,
-    id?: string,
-) {
-  if (id) {
-    // PUT /epi/{id}
-    await api.put(`/epi/${id}`, equipment);
-  } else {
-    // POST /epi
-    await api.post('/epi', equipment);
-  }
+export async function saveEquipment(payload: EPIRequestPayload, id?: string): Promise<EPI> {
+  const response = id
+      ? await api.put(`/epi/${id}`, payload, { withCredentials: true })
+      : await api.post(`/epi`, payload, { withCredentials: true });
+  return response.data;
 }
+
 
 // Supprime un équipement
 export async function deleteEquipment(id: string) {
