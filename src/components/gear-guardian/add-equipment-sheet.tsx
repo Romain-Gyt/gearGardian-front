@@ -169,11 +169,14 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData, isLo
 
     if (data.photo?.[0]) {
       const file = data.photo[0];
-      if (initialData?.photos?.[0]) {
-        // On remplace la photo existante
-        await replacePhoto(parseInt(savedEpi.id), initialData.photos[0].id, file);
+      const photoId =
+        initialData?.photos?.[0]?.id ?? savedEpi.photos?.[0]?.id;
+
+      if (photoId) {
+        // Remplace la photo existante seulement si un id valide est disponible
+        await replacePhoto(parseInt(savedEpi.id), photoId, file);
       } else {
-        // On ajoute une nouvelle photo
+        // Ajoute une nouvelle photo si aucune à remplacer
         await uploadPhoto(parseInt(savedEpi.id), file);
       }
     }
