@@ -16,3 +16,12 @@ export async function signup(username: string, email: string, password: string) 
 export async function logout() {
   await api.post('/auth/logout');
 }
+
+export interface AuthMe {
+  role: string
+}
+
+export async function getCurrentUser() {
+  const { data } = await api.get<AuthMe>('/auth/me')
+  return data
+}
