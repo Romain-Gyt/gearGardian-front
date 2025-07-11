@@ -179,6 +179,8 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData, isLo
         // Ajoute une nouvelle photo si aucune à remplacer
         await uploadPhoto(parseInt(savedEpi.id), file);
       }
+      await onRefresh?.(); // force la remontée des nouvelles données (photo incluse)
+
     }
 
     onRefresh?.();

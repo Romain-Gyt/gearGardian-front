@@ -5,7 +5,7 @@ export async function uploadPhoto(epiId: number | string, file: File) {
   const formData = new FormData();
   formData.append('file', file);
   const { data } = await api.post(`/epi/${epiId}/photos`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+    withCredentials: true,
   });
   return data;
 }
@@ -15,7 +15,7 @@ export async function replacePhoto(epiId: number | string, photoId: number | str
   const formData = new FormData();
   formData.append('file', file);
   const { data } = await api.put(`/epi/${epiId}/photos/${photoId}`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+  withCredentials: true,
   });
   return data;
 }
