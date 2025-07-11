@@ -1,0 +1,293 @@
+'use client';
+
+import * as React from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { CalendarIcon, Loader2 } from 'lucide-react'
+
+import { cn } from '@/lib/utils';
+import {EPI, EquipmentTypeLabels} from '@/lib/types'
+import { EquipmentType, AdminEPIRequestPayload } from '@/lib/types'
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+
+interface AdminEquipmentSheetProps {
+  onSave: (
+    equipment: AdminEPIRequestPayload,
+    file?: File | null,
+    id?: string,
+  ) => void
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  initialData?: EPI | null;
+  isLoading: boolean;
+}
+
+const equipmentFormSchema = z.object({
+  name: z.string().min(3, { message: 'Le nom doit comporter au moins 3 caractères.' }),
+  type: z.nativeEnum(EquipmentType, { required_error: "Le type d'équipement est requis." }),
+  serialNumber: z.string(),
+  purchaseDate: z.date({ required_error: "La date d'achat est requise." }),
+  serviceStartDate: z.date({ required_error: 'La date de mise en service est requise.' }),
+  lifespanInYears: z.coerce.number({invalid_type_error: 'Veuillez entrer un nombre valide.'}).int().min(1, { message: "La durée de vie doit être d'au moins 1 an." }),
+  expectedEndOfLife: z.date(),
+  description: z.string().min(10, { message: 'La description doit comporter au moins 10 caractères.' }),
+  manufacturerData: z.string().optional(),
+  photo: z.any().optional(),
+  archived: z.boolean().default(false),
+  userId: z.string(),
+});
+
+type EquipmentFormValues = z.infer<typeof equipmentFormSchema>
+
+export function AdminEquipmentSheet({ onSave, isOpen, onOpenChange, initialData, isLoading }: AdminEquipmentSheetProps) {
+  const isEditMode = !!initialData;
+
+  const validationSchema = React.useMemo(() => {
+    if (isEditMode) {
+      return equipmentFormSchema;
+    }
+    return equipmentFormSchema.extend({
+      photo: z.any().refine((files) => files?.length === 1, {
+        message: 'La photo est requise.',
+      }),
+    });
+  }, [isEditMode]);
+
+  const form = useForm<EquipmentFormValues>({
+    resolver: zodResolver(validationSchema),
+  });
+
+  const { watch, setValue } = form;
+  const serviceStartDate = watch('serviceStartDate');
+  const lifespanInYears = watch('lifespanInYears');
+  const calculatedEol = watch('expectedEndOfLife');
+
+  React.useEffect(() => {
+    if (serviceStartDate && lifespanInYears && Number(lifespanInYears) > 0) {
+      const eol = new Date(serviceStartDate);
+      eol.setFullYear(eol.getFullYear() + Number(lifespanInYears));
+      setValue('expectedEndOfLife', eol, { shouldValidate: true });
+    }
+  }, [serviceStartDate, lifespanInYears, setValue]);
+
+
+  React.useEffect(() => {
+    if (isOpen) {
+      if (initialData) {
+        const serviceDate = new Date(initialData.serviceStartDate);
+        const endDate = new Date(initialData.expectedEndOfLife);
+        const lifespan = Math.round((endDate.getTime() - serviceDate.getTime()) / (1000 * 60 * 60 * 24 * 365.25));
+        
+        form.reset({
+          name: initialData.name,
+          type: initialData.type,
+          serialNumber: initialData.serialNumber || '',
+          purchaseDate: new Date(initialData.purchaseDate),
+          serviceStartDate: serviceDate,
+          lifespanInYears: lifespan > 0 ? lifespan : 10,
+          expectedEndOfLife: endDate,
+          description: initialData.description,
+          manufacturerData: initialData.manufacturerData,
+          photo: undefined,
+          archived: initialData.archived,
+          userId: initialData.UserId,
+        });
+      } else {
+        const defaultServiceDate = new Date();
+        const defaultLifespan = 10;
+        const defaultEndDate = new Date(defaultServiceDate);
+        defaultEndDate.setFullYear(defaultEndDate.getFullYear() + defaultLifespan);
+        
+        form.reset({
+          name: '',
+          type: EquipmentType.OTHER,
+          serialNumber: '',
+          purchaseDate: new Date(),
+          serviceStartDate: defaultServiceDate,
+          lifespanInYears: defaultLifespan,
+          expectedEndOfLife: defaultEndDate,
+          description: '',
+          manufacturerData: '',
+          photo: undefined,
+          archived: false,
+          userId: '',
+        });
+      }
+    }
+  }, [isOpen, initialData, form]);
+
+  const onSubmit = async (data: EquipmentFormValues) => {
+    const payload: AdminEPIRequestPayload = {
+      name: data.name,
+      type: data.type,
+      serialNumber: data.serialNumber ,
+      purchaseDate: data.purchaseDate.toISOString().split('T')[0],
+      serviceStartDate: data.serviceStartDate.toISOString().split('T')[0],
+      lifespanInYears: data.lifespanInYears,
+      description: data.description,
+      manufacturerData: data.manufacturerData || '',
+      archived: data.archived,
+      userId: data.userId,
+    };
+    const file = (data.photo as FileList | undefined)?.[0] ?? null
+    onSave(payload, file, initialData?.id);
+  };
+
+
+  const DatePicker = ({ name, label }: { name: 'purchaseDate' | 'serviceStartDate'; label: string }) => (
+    <div className="grid gap-2">
+      <Label>{label}</Label>
+      <Controller
+        control={form.control}
+        name={name}
+        render={({ field }) => (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant={'outline'} className={cn('justify-start text-left font-normal', !field.value && 'text-muted-foreground')}>
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {field.value ? format(field.value, 'PPP', { locale: fr }) : <span>Choisir une date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 z-[60]">
+              <Calendar
+                locale={fr}
+                mode="single"
+                selected={field.value as Date}
+                onSelect={(date) => field.onChange(date)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        )}
+      />
+      {form.formState.errors[name] && <p className="text-sm text-destructive">{form.formState.errors[name]?.message as string}</p>}
+    </div>
+  );
+
+  return (
+    <Sheet open={isOpen} onOpenChange={onOpenChange}>
+      <SheetContent className="sm:max-w-lg w-[90vw] overflow-y-auto">
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <SheetHeader>
+            <SheetTitle className="font-headline">{isEditMode ? "Modifier l'équipement" : 'Ajouter un équipement'}</SheetTitle>
+            <SheetDescription>
+              {isEditMode ? "Modifiez les détails de votre équipement." : "Remplissez les détails de votre nouvel équipement."} Cliquez sur enregistrer lorsque vous avez terminé.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Nom de l'équipement</Label>
+              <Input id="name" {...form.register('name')} />
+              {form.formState.errors.name && <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="type">Type d'équipement</Label>
+                <Controller
+                    control={form.control}
+                    name="type"
+                    render={({ field }) => (
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner un type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.values(EquipmentType).map((type) => (
+                                <SelectItem key={type} value={type}>
+                                  {EquipmentTypeLabels[type]}
+                                </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                    )}
+                />
+                {form.formState.errors.type && <p className="text-sm text-destructive">{form.formState.errors.type.message}</p>}
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="serialNumber">Numéro de série </Label>
+                <Input id="serialNumber" {...form.register('serialNumber')} />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="photo">Photo {isEditMode && "(Optionnel: laisser vide pour garder l'ancienne)"}</Label>
+              <Input id="photo" type="file" accept="image/*" {...form.register('photo')} />
+              {form.formState.errors.photo && <p className="text-sm text-destructive">{form.formState.errors.photo.message as string}</p>}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <DatePicker name="purchaseDate" label="Date d'achat" />
+              <DatePicker name="serviceStartDate" label="Date de mise en service" />
+            </div>
+             
+            <div className="grid grid-cols-2 gap-4 items-end">
+                <div className="grid gap-2">
+                    <Label htmlFor="lifespanInYears">Durée de vie (ans)</Label>
+                    <Input id="lifespanInYears" type="number" {...form.register('lifespanInYears')} />
+                    {form.formState.errors.lifespanInYears && <p className="text-sm text-destructive">{form.formState.errors.lifespanInYears.message as string}</p>}
+                </div>
+                <div className="grid gap-2">
+                    <Label>Date de fin de vie prévue</Label>
+                    <div className="text-sm font-medium h-10 flex items-center px-3 py-2 rounded-md border border-input bg-muted">
+                        <p>{calculatedEol ? format(calculatedEol, 'PPP', { locale: fr }) : '...'}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="description">Commentaires (description, usure, etc.)</Label>
+              <Textarea id="description" {...form.register('description')} />
+              {form.formState.errors.description && <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>}
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="manufacturerData">Données fabricant (Optionnel)</Label>
+              <Textarea id="manufacturerData" placeholder="ex: marque, modèle, recommandations..." {...form.register('manufacturerData')} />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="userId">ID Utilisateur</Label>
+              <Input id="userId" {...form.register('userId')} />
+              {form.formState.errors.userId && <p className="text-sm text-destructive">{form.formState.errors.userId.message as string}</p>}
+            </div>
+
+            <div className="flex items-center space-x-2 pt-2">
+              <Controller control={form.control} name="archived" render={({ field }) => <Switch id="archived" checked={field.value} onCheckedChange={field.onChange} />} />
+              <Label htmlFor="archived">Archiver cet équipement (ne sera plus actif)</Label>
+            </div>
+          </div>
+          <SheetFooter>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Enregistrer
+            </Button>
+          </SheetFooter>
+        </form>
+      </SheetContent>
+    </Sheet>
+  );
+}

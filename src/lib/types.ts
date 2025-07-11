@@ -49,6 +49,17 @@ export interface EPI {
   // status, percentageUsed si nécessaire
 }
 
+export interface EPIResponse {
+  id: string
+  name: string
+  type: EquipmentType
+  percentageUsed: number
+  expectedEndOfLife: string
+  archived: boolean
+  createdAt: string
+  userId: string
+}
+
 /**
  * Correspond exactement à ce que votre EPIRequest Java attend côté backend.
  */
@@ -62,6 +73,10 @@ export interface EPIRequestPayload {
   description: string;
   manufacturerData?: string;
   archived: boolean;
+}
+
+export interface AdminEPIRequestPayload extends EPIRequestPayload {
+  userId: string
 }
 
 export interface UserProfile {
