@@ -33,7 +33,6 @@ import {
 } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import {onRefresh} from "next/dist/client/components/react-dev-overlay/pages/client";
 
 interface EquipmentSheetProps {
   onSave: (
@@ -63,7 +62,7 @@ const equipmentFormSchema = z.object({
 
 type EquipmentFormValues = z.infer<typeof equipmentFormSchema>;
 
-export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData, isLoading }: EquipmentSheetProps) {
+export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData, isLoading, onRefresh }: EquipmentSheetProps) {
   const isEditMode = !!initialData;
 
   const validationSchema = React.useMemo(() => {
@@ -179,7 +178,7 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData, isLo
       }
     }
 
-
+    onRefresh?.();
     onOpenChange(false); // ferme le sheet
   };
 
