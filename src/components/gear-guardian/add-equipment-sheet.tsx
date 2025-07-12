@@ -1,5 +1,4 @@
 'use client';
-
 import * as React from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,7 +7,9 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 
+import {replacePhoto, uploadPhoto} from '@/lib/api/uploadPhoto';
 import { cn } from '@/lib/utils';
+import { compressImage } from '@/lib/image-utils';
 import {EPI, EquipmentTypeLabels} from '@/lib/types';
 import { EquipmentType, EPIRequestPayload } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -33,16 +34,18 @@ import {
 } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import {toast} from "@/hooks/use-toast";
 
 interface EquipmentSheetProps {
   onSave: (
       equipment: EPIRequestPayload,
       id?: string,
-  ) => void;
+  ) => Promise<EPI>;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   initialData?: EPI | null;
   isLoading: boolean;
+  onRefresh?: () => void;
 }
 
 const equipmentFormSchema = z.object({
@@ -61,7 +64,7 @@ const equipmentFormSchema = z.object({
 
 type EquipmentFormValues = z.infer<typeof equipmentFormSchema>;
 
-export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData, isLoading }: EquipmentSheetProps) {
+export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData, isLoading, onRefresh }: EquipmentSheetProps) {
   const isEditMode = !!initialData;
 
   const validationSchema = React.useMemo(() => {
@@ -155,7 +158,7 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData, isLo
     const payload: EPIRequestPayload = {
       name: data.name,
       type: data.type,
-      serialNumber: data.serialNumber ,
+      serialNumber: data.serialNumber,
       purchaseDate: data.purchaseDate.toISOString().split('T')[0],
       serviceStartDate: data.serviceStartDate.toISOString().split('T')[0],
       lifespanInYears: data.lifespanInYears,
@@ -163,7 +166,44 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData, isLo
       manufacturerData: data.manufacturerData || '',
       archived: data.archived,
     };
-    onSave(payload, initialData?.id);
+
+    try {
+      const savedEpi = await onSave(payload, initialData?.id);
+
+      if (data.photo?.[0]) {
+        try {
+          const rawFile = data.photo[0];
+          const file = await compressImage(rawFile); // ← compression auto
+
+          const photoId =
+              initialData?.photos?.[0]?.id ?? savedEpi.photos?.[0]?.id;
+
+          if (photoId) {
+            await replacePhoto(parseInt(savedEpi.id), photoId, file);
+          } else {
+            await uploadPhoto(parseInt(savedEpi.id), file);
+          }
+
+          await onRefresh?.();
+        } catch (err) {
+          toast({
+            title: 'Erreur sur la photo',
+            description: err instanceof Error ? err.message : 'Compression ou upload échoué.',
+            variant: 'destructive',
+          });
+        }
+      }
+
+      onRefresh?.();
+      onOpenChange(false);
+    } catch (err) {
+      toast({
+        title: 'Erreur critique',
+        description: 'Échec de sauvegarde de l’équipement.',
+        variant: 'destructive',
+      });
+      console.error(err);
+    }
   };
 
 

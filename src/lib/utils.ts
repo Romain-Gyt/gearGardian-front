@@ -12,6 +12,7 @@ export function deriveStatus(equipment: EPI): EquipmentStatus {
   if (equipment.percentageUsed >= 100) {
     return EquipmentStatus.EXPIRED;
   }
+
   // tu peux extraire ce seuil si tu veux le rendre configurable
   const EXPIRING_SOON_THRESHOLD = 80;
   if (equipment.percentageUsed >= EXPIRING_SOON_THRESHOLD) {
@@ -19,3 +20,4 @@ export function deriveStatus(equipment: EPI): EquipmentStatus {
   }
   return EquipmentStatus.GOOD;
 }
+

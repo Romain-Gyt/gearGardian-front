@@ -45,6 +45,7 @@ export interface EPI {
   CreatedAt: Date;
   UserId: string
   status: EquipmentStatus;
+  photos?: PhotoEpi[];
   // ISO date
   // status, percentageUsed si nécessaire
 }
@@ -62,6 +63,14 @@ export interface EPIRequestPayload {
   description: string;
   manufacturerData?: string;
   archived: boolean;
+}
+
+export interface PhotoEpi {
+  id: number;
+  filename: string;
+  url: string;
+  contentType: string;
+  size: number;
 }
 
 export interface UserProfile {

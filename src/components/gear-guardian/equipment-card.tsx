@@ -52,14 +52,18 @@ export function EquipmentCard({ equipment, viewMode, onEdit, onDelete, onAnalyze
         serialNumber,
         description,
         manufacturerData,
-        photoUrl,
         photoAiHint,
         archived,
         purchaseDate,
         expectedEndOfLife,
         percentageUsed,
     } = equipment;
+    const rawPhotoUrl = equipment.photos?.[0]?.url;
+    const photoUrl = rawPhotoUrl
+        ? `http://localhost:8080/${rawPhotoUrl.replace(/\\/g, '/')}` // ✅ force les slashes
+        : null;
 
+    console.log('Rendering EquipmentCard for:', name, 'with photo URL:', photoUrl);
     // On en déduit l'enum EquipmentStatus
     const equipmentStatus = deriveStatus(equipment);
 
@@ -135,7 +139,23 @@ export function EquipmentCard({ equipment, viewMode, onEdit, onDelete, onAnalyze
     if (viewMode === 'list') {
         return (
             <Card className="flex items-center p-4 gap-4 relative">
-                <Image src={photoUrl} alt={name} width={80} height={80} className="rounded-md object-cover aspect-square" data-ai-hint={photoAiHint}/>
+                {photoUrl ? (
+                    <div className="relative w-[120px] h-[80px] flex-shrink-0">
+                        <Image
+                            src={photoUrl}
+                            alt={name}
+                            fill
+                            unoptimized
+                            className="rounded object-cover"
+                        />
+                    </div>
+                ) : (
+                    <div
+                        className="rounded-t-lg bg-muted w-full aspect-[2/1] flex items-center justify-center text-muted-foreground text-sm">
+                        Aucune photo
+                    </div>
+                )}
+
                 <div className="flex-1 grid grid-cols-6 items-center gap-4">
                     <div className="col-span-3 self-start">
                         <h3 className="font-semibold font-headline">{name}</h3>
@@ -174,14 +194,23 @@ export function EquipmentCard({ equipment, viewMode, onEdit, onDelete, onAnalyze
         <Card className="flex flex-col">
             <CardHeader className="p-0">
                 <div className="relative">
-                    <Image
-                        src={photoUrl}
-                        alt={name}
-                        width={400}
-                        height={200}
-                        className="rounded-t-lg object-cover w-full aspect-[2/1]"
-                        data-ai-hint={photoAiHint}
-                    />
+                    {photoUrl ? (
+                        <div className="relative w-full aspect-[2/1]">
+                            <Image
+                                src={photoUrl}
+                                alt={name}
+                                fill
+                                unoptimized
+                                className="rounded-t-lg object-cover"
+                            />
+                        </div>
+                    ) : (
+                        <div
+                            className="rounded-t-lg bg-muted w-full aspect-[2/1] flex items-center justify-center text-muted-foreground text-sm">
+                        Aucune photo
+                        </div>
+                    )}
+
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
