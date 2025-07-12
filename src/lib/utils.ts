@@ -20,3 +20,4 @@ export function deriveStatus(equipment: EPI): EquipmentStatus {
   }
   return EquipmentStatus.GOOD;
 }
+

@@ -9,6 +9,7 @@ import { CalendarIcon, Loader2 } from 'lucide-react';
 
 import {replacePhoto, uploadPhoto} from '@/lib/api/uploadPhoto';
 import { cn } from '@/lib/utils';
+import { compressImage } from '@/lib/image-utils';
 import {EPI, EquipmentTypeLabels} from '@/lib/types';
 import { EquipmentType, EPIRequestPayload } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,7 @@ import {
 } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import {toast} from "@/hooks/use-toast";
 
 interface EquipmentSheetProps {
   onSave: (
@@ -165,26 +167,43 @@ export function EquipmentSheet({ onSave, isOpen, onOpenChange, initialData, isLo
       archived: data.archived,
     };
 
-    const savedEpi = await onSave(payload, initialData?.id);
+    try {
+      const savedEpi = await onSave(payload, initialData?.id);
 
-    if (data.photo?.[0]) {
-      const file = data.photo[0];
-      const photoId =
-        initialData?.photos?.[0]?.id ?? savedEpi.photos?.[0]?.id;
+      if (data.photo?.[0]) {
+        try {
+          const rawFile = data.photo[0];
+          const file = await compressImage(rawFile); // ← compression auto
 
-      if (photoId) {
-        // Remplace la photo existante seulement si un id valide est disponible
-        await replacePhoto(parseInt(savedEpi.id), photoId, file);
-      } else {
-        // Ajoute une nouvelle photo si aucune à remplacer
-        await uploadPhoto(parseInt(savedEpi.id), file);
+          const photoId =
+              initialData?.photos?.[0]?.id ?? savedEpi.photos?.[0]?.id;
+
+          if (photoId) {
+            await replacePhoto(parseInt(savedEpi.id), photoId, file);
+          } else {
+            await uploadPhoto(parseInt(savedEpi.id), file);
+          }
+
+          await onRefresh?.();
+        } catch (err) {
+          toast({
+            title: 'Erreur sur la photo',
+            description: err instanceof Error ? err.message : 'Compression ou upload échoué.',
+            variant: 'destructive',
+          });
+        }
       }
-      await onRefresh?.(); // force la remontée des nouvelles données (photo incluse)
 
+      onRefresh?.();
+      onOpenChange(false);
+    } catch (err) {
+      toast({
+        title: 'Erreur critique',
+        description: 'Échec de sauvegarde de l’équipement.',
+        variant: 'destructive',
+      });
+      console.error(err);
     }
-
-    onRefresh?.();
-    onOpenChange(false); // ferme le sheet
   };
 
 

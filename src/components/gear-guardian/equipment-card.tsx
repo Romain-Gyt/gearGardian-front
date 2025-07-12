@@ -140,16 +140,18 @@ export function EquipmentCard({ equipment, viewMode, onEdit, onDelete, onAnalyze
         return (
             <Card className="flex items-center p-4 gap-4 relative">
                 {photoUrl ? (
-                    <Image
-                        src={photoUrl}
-                        alt={name}
-                        width={400}
-                        height={200}
-                        unoptimized
-                        className="rounded-t-lg object-cover w-full aspect-[2/1]"
-                    />
+                    <div className="relative w-[120px] h-[80px] flex-shrink-0">
+                        <Image
+                            src={photoUrl}
+                            alt={name}
+                            fill
+                            unoptimized
+                            className="rounded object-cover"
+                        />
+                    </div>
                 ) : (
-                    <div className="rounded-t-lg bg-muted w-full aspect-[2/1] flex items-center justify-center text-muted-foreground text-sm">
+                    <div
+                        className="rounded-t-lg bg-muted w-full aspect-[2/1] flex items-center justify-center text-muted-foreground text-sm">
                         Aucune photo
                     </div>
                 )}
@@ -193,17 +195,19 @@ export function EquipmentCard({ equipment, viewMode, onEdit, onDelete, onAnalyze
             <CardHeader className="p-0">
                 <div className="relative">
                     {photoUrl ? (
-                        <Image
-                            src={photoUrl}
-                            alt={name}
-                            width={400}
-                            height={200}
-                            unoptimized
-                            className="rounded-t-lg object-cover w-full aspect-[2/1]"
-                        />
+                        <div className="relative w-full aspect-[2/1]">
+                            <Image
+                                src={photoUrl}
+                                alt={name}
+                                fill
+                                unoptimized
+                                className="rounded-t-lg object-cover"
+                            />
+                        </div>
                     ) : (
-                        <div className="rounded-t-lg bg-muted w-full aspect-[2/1] flex items-center justify-center text-muted-foreground text-sm">
-                            Aucune photo
+                        <div
+                            className="rounded-t-lg bg-muted w-full aspect-[2/1] flex items-center justify-center text-muted-foreground text-sm">
+                        Aucune photo
                         </div>
                     )}
 
