@@ -227,32 +227,33 @@ export function Dashboard() {
 
         {/* Main content */}
         <div className="flex flex-col">
-          <header className="flex h-14 items-center justify-between gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
-            <div className="flex items-center gap-2">
+          <header
+              className="flex h-14 items-center justify-between gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+            <div className="flex items-center gap-2 w-full">
               <Sheet>
                 <SheetTrigger asChild>
                   <Button variant="outline" size="icon" className="md:hidden">
-                    <PanelLeft className="h-5 w-5" />
+                    <PanelLeft className="h-5 w-5"/>
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left">
-                  <Logo size={32} className="mb-4" />
+                  <Logo size={32} className="mb-4"/>
                   <button onClick={() => setActiveView('equipment')} className="flex items-center gap-2 mb-2">
-                    <ShieldCheck /> Mon Équipement
+                    <ShieldCheck/> Mon Équipement
                   </button>
                   <button onClick={() => setActiveView('tutorials')} className="flex items-center gap-2">
-                    <BookOpen /> Tutoriels
+                    <BookOpen/> Tutoriels
                   </button>
                 </SheetContent>
               </Sheet>
 
               {activeView === 'equipment' && (
-                  <div className="relative w-full min-w-0 md:w-1/2 lg:w-1/3">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <div className="relative flex items-center flex-1 min-w-0">
+                    <Search className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none"/>
                     <Input
                         type="search"
-                        placeholder="Rechercher..."
-                        className="w-full pl-10"
+                        placeholder="Rechercher un équipement..."
+                        className="w-50 pl-10 pr-4 h-10 rounded-md border border-input bg-background text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -263,21 +264,21 @@ export function Dashboard() {
             <div className="flex items-center gap-2">
               {activeView === 'equipment' && (
                   <Button size="sm" onClick={handleAddItem}>
-                    <PlusCircle className="mr-1" /> Ajouter
+                    <PlusCircle className="mr-1"/> Ajouter
                   </Button>
               )}
-              <ModeToggle />
+              <ModeToggle/>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="secondary" size="icon" className="rounded-full">
-                    <LogOut className="h-5 w-5" />
+                    <LogOut className="h-5 w-5"/>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>Mon Compte</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
+                  <DropdownMenuSeparator/>
                   <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2" /> Déconnexion
+                    <LogOut className="mr-2"/> Déconnexion
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -285,7 +286,7 @@ export function Dashboard() {
           </header>
 
           <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-            <ExpirationBanner equipment={equipment} threshold={alertThreshold} />
+            <ExpirationBanner equipment={equipment} threshold={alertThreshold}/>
 
             {activeView === 'equipment' ? (
                 <>
@@ -295,16 +296,18 @@ export function Dashboard() {
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('grid')}>
-                              <LayoutGrid />
+                            <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="icon"
+                                    onClick={() => setViewMode('grid')}>
+                              <LayoutGrid/>
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>Grille</TooltipContent>
                         </Tooltip>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('list')}>
-                              <List />
+                            <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="icon"
+                                    onClick={() => setViewMode('list')}>
+                              <List/>
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>Liste</TooltipContent>
